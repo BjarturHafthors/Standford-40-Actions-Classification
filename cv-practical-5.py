@@ -79,6 +79,8 @@ testing_set_labels = getDatasetLabels(testing_set_filenames)
 training_set_images = getImagesFromFilenames(training_set_filenames)
 testing_set_images = getImagesFromFilenames(testing_set_filenames)
 
+## TODO: one-hot encode label lists
+
 ## TODO: Part 3: Construct model
 
 
