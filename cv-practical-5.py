@@ -59,7 +59,7 @@ def loadImage(filename):
     
     #return (normalized_image,label)
 
-def readImageSetNames(setName):
+def getDatasetFilenames(setName):
     # Open set file and save all filenames
     with open(setName) as file:
         set_files = file.readlines()
@@ -69,10 +69,25 @@ def readImageSetNames(setName):
 
     return set_files
 
+def getDatasetLabels(file_list):
+    label_list = []
+    
+    for file in file_list:
+        label_list.append(file.rpartition('_')[0])
+
+    return label_list
+
 ## Part 1: Split filenames into training and test sets
 
-training_set_files = readImageSetNames("data\\image-splits\\train.txt")
-testing_set_files = readImageSetNames("data\\image-splits\\test.txt")
+
+
+training_set_files = getDatasetFilenames("data\\image-splits\\train.txt")
+testing_set_files = getDatasetFilenames("data\\image-splits\\test.txt")
+training_set_labels = getDatasetLabels(training_set_files)
+testing_set_labels = getDatasetLabels(testing_set_files)
+
+print(training_set_labels)
+print(testing_set_labels)
 
 ## TODO: Part 2: Load and preprocess images
 
