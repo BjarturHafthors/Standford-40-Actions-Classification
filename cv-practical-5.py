@@ -39,7 +39,7 @@ def loadImage(filename):
     # Normalize image by dividing with 255 to make all values between 0 and 1
     normalized_image = resized_image/255.0
     
-    #return (normalized_image,label)
+    return (normalized_image)
 
 def getDatasetFilenames(setName):
     # Open set file and save all filenames
@@ -59,18 +59,28 @@ def getDatasetLabels(file_list):
 
     return label_list
 
+def getImagesFromFilenames(filename_list):
+    image_list = []
+    
+    for filename in filename_list:
+        image_list.append(loadImage("data\\images\\" + filename))
+
+    return image_list
+
 ## Part 1: Split filenames into training and test sets
 
-training_set_files = getDatasetFilenames("data\\image-splits\\train.txt")
-testing_set_files = getDatasetFilenames("data\\image-splits\\test.txt")
-training_set_labels = getDatasetLabels(training_set_files)
-testing_set_labels = getDatasetLabels(testing_set_files)
+training_set_filenames = getDatasetFilenames("data\\image-splits\\train.txt")
+testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
+training_set_labels = getDatasetLabels(training_set_filenames)
+testing_set_labels = getDatasetLabels(testing_set_filenames)
 
 ## TODO: Part 2: Load and preprocess images
 
-loadImage("data\\images\\" + training_set_files[0])
+training_set_images = getImagesFromFilenames(training_set_filenames)
+testing_set_images = getImagesFromFilenames(testing_set_filenames)
 
 ## TODO: Part 3: Construct model
+
 
 #model = Sequential()
 
