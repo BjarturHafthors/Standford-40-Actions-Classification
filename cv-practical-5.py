@@ -10,7 +10,7 @@ from keras.optimizers import SGD
 BATCH_SIZE = 64
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 1
-STEPS_PER_EPOCH = 4000
+STEPS_PER_EPOCH = 63
 TEST_STEPS_SIZE = 87
 DATASET_PATH = "data\\images\\"
 
@@ -145,7 +145,7 @@ print('')
 
 ## TODO: Part 5: Print results
 
-score = model.evaluate_generator(generator=training_generator, steps=TEST_STEPS_SIZE)
+score = model.evaluate_generator(generator=testing_generator, steps=TEST_STEPS_SIZE)
 
 print('')
 print('Test score: ' +  str(score[0]))
