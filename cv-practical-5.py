@@ -1,14 +1,26 @@
 import os
 import cv2
+import random
+import numpy as np
 from keras.models import Sequential
-#from keras.layers.core import Dense, Activation, Flatten
-#from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.core import Dense, Activation, Flatten
+from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.optimizers import SGD
+
+BATCH_SIZE = 64
+NUMBER_OF_CLASSES = 40
+NUMBER_OF_EPOCHS = 1
+STEPS_PER_EPOCH = 4000
+PATH_PREFIX = "data\\images\\"
 
 def loadImage(filename):
+    #Save label
+    label = filename.rpartition('_')[0].split('\\')[-1]
+
     # Load image with flag "Greyscale"
     image = cv2.imread(filename,0)
 
-    # Get height and witdh, but skip channels
+    # Get height and width, but skip channels
     height, width = image.shape[:2]
 
     # Assign smaller value to crop_dim
@@ -39,7 +51,7 @@ def loadImage(filename):
     # Normalize image by dividing with 255 to make all values between 0 and 1
     normalized_image = resized_image/255.0
     
-    return (normalized_image)
+    return (normalized_image, label)
 
 def getDatasetFilenames(setName):
     # Open set file and save all filenames
@@ -67,28 +79,64 @@ def getImagesFromFilenames(filename_list):
 
     return image_list
 
+def DataGenerator(img_addrs, batch_size, num_classes, class_label_dictionary):
+  while 1:
+    # Ensure randomisation per epoch
+    random.shuffle(img_addrs)
+
+    X = []
+    Y = []
+    
+    for i in range(len(img_addrs)):
+      #Load image
+      image_info = loadImage(PATH_PREFIX + img_addrs[i])
+
+      #Append image data to X
+      X.append(image_info[0])
+
+      #Append image label one-hot vector to Y
+      Y.append(np.eye(NUMBER_OF_CLASSES)[class_label_dictionary[image_info[1]]])
+
+      #Comparing count and batch size to see if batch size reached
+      #We can emit using count by simply using i+1, as that's exactly
+      #what count would amount to
+      if (i+1) % batch_size == 0:
+        
+        #Returning X and Y for this batch  
+        yield X, Y
+
+        #Resetting X and Y
+        X = []
+        Y = []
+
 ## Part 1: Split filenames into training and test sets
 
 training_set_filenames = getDatasetFilenames("data\\image-splits\\train.txt")
 testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
+
 training_set_labels = getDatasetLabels(training_set_filenames)
-testing_set_labels = getDatasetLabels(testing_set_filenames)
+class_label_list = list(set(training_set_labels))
+class_label_dictionary = { class_label_list[i] : i for i in range(0, len(class_label_list) ) }
 
-## TODO: Part 2: Load and preprocess images
+## Part 2: Set parameters
 
-training_set_images = getImagesFromFilenames(training_set_filenames)
-testing_set_images = getImagesFromFilenames(testing_set_filenames)
-
-## TODO: one-hot encode label lists
+training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, NUMBER_OF_CLASSES, class_label_dictionary)
 
 ## TODO: Part 3: Construct model
 
+model = Sequential()
 
-#model = Sequential()
+model.add(Convolution2D(64, kernel_size=3, activation='relu', input_shape=(48,48,1)))
+model.add(Convolution2D(32, kernel_size=3, activation='relu'))
+model.add(Flatten())
+model.add(Dense(10, activation='softmax'))
 
+sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+
+model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
 ## TODO: Part 4: Train model
 
-
+model.fit_generator(generator=training_generator, epochs=NUMBER_OF_EPOCHS, steps_per_epoch=STEPS_PER_EPOCH)
 
 ## TODO: Part 5: Print results
