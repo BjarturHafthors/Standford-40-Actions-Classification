@@ -113,14 +113,10 @@ def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
 training_set_filenames = getDatasetFilenames("data\\image-splits\\train.txt")
 testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
 
-training_set_labels = getDatasetLabels(training_set_filenames)
-class_label_list = list(set(training_set_labels))
-class_label_dictionary = { class_label_list[i] : i for i in range(0, len(class_label_list) ) }
-
 ## Part 2: Create Generators
 
-training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_label_dictionary)
-testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_label_dictionary)
+training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, getDatasetLabels(training_set_filenames))
+testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, getDatasetLabels(training_set_filenames))
 
 ## TODO: Part 3: Construct model
 
