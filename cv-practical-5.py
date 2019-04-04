@@ -12,13 +12,14 @@ NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 1
 STEPS_PER_EPOCH = 4000
 PATH_PREFIX = "data\\images\\"
+TEST_STEPS_SIZE = 87
 
 def loadImage(filename):
     #Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
 
     # Load image with flag "Greyscale"
-    image = cv2.imread(filename,0)
+    image = cv2.imread(filename, 1)
 
     # Get height and width, but skip channels
     height, width = image.shape[:2]
@@ -101,7 +102,9 @@ def DataGenerator(img_addrs, batch_size, num_classes, class_label_dictionary):
       #We can emit using count by simply using i+1, as that's exactly
       #what count would amount to
       if (i+1) % batch_size == 0:
-        
+        X = np.array(X)
+        Y = np.array(Y)
+
         #Returning X and Y for this batch  
         yield X, Y
 
@@ -118,18 +121,19 @@ training_set_labels = getDatasetLabels(training_set_filenames)
 class_label_list = list(set(training_set_labels))
 class_label_dictionary = { class_label_list[i] : i for i in range(0, len(class_label_list) ) }
 
-## Part 2: Set parameters
+## Part 2: Create Generators
 
 training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, NUMBER_OF_CLASSES, class_label_dictionary)
+testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, NUMBER_OF_CLASSES, class_label_dictionary)
 
 ## TODO: Part 3: Construct model
 
 model = Sequential()
 
-model.add(Convolution2D(64, kernel_size=3, activation='relu', input_shape=(48,48,1)))
+model.add(Convolution2D(64, kernel_size=3, activation='relu', input_shape=(48,48,3)))
 model.add(Convolution2D(32, kernel_size=3, activation='relu'))
 model.add(Flatten())
-model.add(Dense(10, activation='softmax'))
+model.add(Dense(40, activation='softmax'))
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
@@ -137,6 +141,21 @@ model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy
 
 ## TODO: Part 4: Train model
 
+print('')
+print('Starting training!')
+print('')
+
 model.fit_generator(generator=training_generator, epochs=NUMBER_OF_EPOCHS, steps_per_epoch=STEPS_PER_EPOCH)
 
+print('')
+print('Training Completed!')
+print('')
+
 ## TODO: Part 5: Print results
+
+score = model.evaluate_generator(generator=training_generator, steps=TEST_STEPS_SIZE)
+
+print('')
+print('Test score: ' +  str(score[0]))
+print('Test accuracy:' +  str(score[1]))
+print('')
