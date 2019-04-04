@@ -49,7 +49,7 @@ def loadImage(filename):
     resized_image = cv2.resize(cropped_image, (48, 48))
 
     # Normalize image by dividing with 255 to make all values between 0 and 1
-    normalized_image = resized_image / 55.0
+    normalized_image = resized_image / 255.0
     
     return (normalized_image, label)
 
