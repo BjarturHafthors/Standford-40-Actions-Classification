@@ -11,15 +11,15 @@ BATCH_SIZE = 64
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 1
 STEPS_PER_EPOCH = 4000
-PATH_PREFIX = "data\\images\\"
 TEST_STEPS_SIZE = 87
+DATASET_PATH = "data\\images\\"
 
 def loadImage(filename):
     #Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
 
     # Load image with flag "Greyscale"
-    image = cv2.imread(filename, 1)
+    image = cv2.imread(DATASET_PATH + filename, 1)
 
     # Get height and width, but skip channels
     height, width = image.shape[:2]
@@ -31,11 +31,11 @@ def loadImage(filename):
       crop_dim = width
     
     # Determine centerpoints for width and height
-    height_middle = height/2
-    width_middle = width/2
+    height_middle = height / 2
+    width_middle = width / 2
 
     # Determine crop size in both directions away from center
-    crop_dim_half = crop_dim/2
+    crop_dim_half = crop_dim / 2
 
     # Determine crop positions
     height_lower_boundary = height_middle - crop_dim_half
@@ -50,7 +50,7 @@ def loadImage(filename):
     resized_image = cv2.resize(cropped_image, (48, 48))
 
     # Normalize image by dividing with 255 to make all values between 0 and 1
-    normalized_image = resized_image/255.0
+    normalized_image = resized_image / 255.0
     
     return (normalized_image, label)
 
@@ -60,37 +60,33 @@ def getDatasetFilenames(setName):
         set_files = file.readlines()
 
     # Remove all endline characters from filenames
-    set_files = [x.strip() for x in set_files]
+    set_files = [filename.strip() for filename in set_files]
 
     return set_files
 
+# returns unique labels dictionary in ['name' => 'number'] format
 def getDatasetLabels(file_list):
     label_list = []
     
     for file in file_list:
         label_list.append(file.rpartition('_')[0])
 
-    return label_list
+    label_list = list(set(label_list))
+    label_dictionary = { label_list[i] : i for i in range(0, len(label_list) ) }
 
-def getImagesFromFilenames(filename_list):
-    image_list = []
-    
-    for filename in filename_list:
-        image_list.append(loadImage("data\\images\\" + filename))
+    return label_dictionary
 
-    return image_list
-
-def DataGenerator(img_addrs, batch_size, num_classes, class_label_dictionary):
+def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
   while 1:
     # Ensure randomisation per epoch
-    random.shuffle(img_addrs)
+    random.shuffle(image_set_filenames)
 
     X = []
     Y = []
     
-    for i in range(len(img_addrs)):
+    for i in range(len(image_set_filenames)):
       #Load image
-      image_info = loadImage(PATH_PREFIX + img_addrs[i])
+      image_info = loadImage(image_set_filenames[i])
 
       #Append image data to X
       X.append(image_info[0])
