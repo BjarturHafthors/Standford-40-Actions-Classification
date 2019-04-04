@@ -8,25 +8,23 @@ from keras.layers.core import Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 
-np.random.seed(1337) # for reproducibility
-
-BATCH_SIZE = 16
+BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 10
+NUMBER_OF_EPOCHS = 20
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
-IMAGE_DIMENSION = 256
+IMAGE_DIMENSION = 48
 
 def loadImage(filename):
     #Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
 
     # Load image with flag "Greyscale"
-    image = cv2.imread(DATASET_PATH + filename, 1)
+    image = cv2.imread(DATASET_PATH + filename, 0)
 
     # Get height and width, but skip channels
     height, width = image.shape[:2]
@@ -59,7 +57,10 @@ def loadImage(filename):
     # Normalize image by dividing with 255 to make all values between 0 and 1
     normalized_image = resized_image / 255.0
     
-    return (normalized_image, label)
+    # Needed so that the network recognizes the shape
+    reshaped_image = np.reshape(normalized_image, (IMAGE_DIMENSION, IMAGE_DIMENSION, 1))
+
+    return (reshaped_image, label)
 
 def getDatasetFilenames(setName):
     # Open set file and save all filenames
@@ -129,15 +130,17 @@ testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, getDatasetL
 
 model = Sequential()
 
-model.add(Convolution2D(64, kernel_size=3, activation='relu', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3)))
-model.add(MaxPooling2D(pool_size = (2, 2)))
-model.add(Convolution2D(32, kernel_size=3, activation='relu'))
-model.add(MaxPooling2D(pool_size = (2, 2)))
-model.add(Convolution2D(16, kernel_size=3, activation='relu'))
-model.add(MaxPooling2D(pool_size = (2, 2)))
-model.add(Convolution2D(8, kernel_size=3, activation='relu'))
+model.add(Convolution2D(32, 3, 3, input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Convolution2D(32, 3, 3))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
 model.add(Flatten())
-model.add(Dense(40, activation='relu'))
+model.add(Dense(40))
+model.add(Activation('softmax'))
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
