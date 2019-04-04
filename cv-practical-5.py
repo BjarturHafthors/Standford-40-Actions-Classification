@@ -75,14 +75,6 @@ def getDatasetLabels(file_list):
 
     return label_dictionary
 
-def getImagesFromFilenames(filename_list):
-    image_list = []
-    
-    for filename in filename_list:
-        image_list.append(loadImage("data\\images\\" + filename))
-
-    return image_list
-
 def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
   while 1:
     # Ensure randomisation per epoch
