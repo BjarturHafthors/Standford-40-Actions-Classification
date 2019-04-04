@@ -119,8 +119,8 @@ class_label_dictionary = { class_label_list[i] : i for i in range(0, len(class_l
 
 ## Part 2: Create Generators
 
-training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, NUMBER_OF_CLASSES, class_label_dictionary)
-testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, NUMBER_OF_CLASSES, class_label_dictionary)
+training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_label_dictionary)
+testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_label_dictionary)
 
 ## TODO: Part 3: Construct model
 
