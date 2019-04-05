@@ -5,7 +5,7 @@ import math
 import numpy as np
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 
 BATCH_SIZE = 64
@@ -130,11 +130,11 @@ testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, getDatasetL
 
 model = Sequential()
 
-model.add(Convolution2D(32, 3, 3, input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
+model.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(Convolution2D(32, 3, 3))
+model.add(Conv2D(32, (3, 3)))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
