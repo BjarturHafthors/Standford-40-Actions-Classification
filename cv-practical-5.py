@@ -3,11 +3,13 @@ import cv2
 import random
 import math
 import numpy as np
+
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import plot_model
+from keras.callbacks import CSVLogger
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -156,7 +158,13 @@ print('')
 print('Starting training!')
 print('')
 
-model.fit_generator(generator=training_generator, epochs=NUMBER_OF_EPOCHS, steps_per_epoch=TOTAL_TRAINING_BATCHES)
+training_logger = CSVLogger('results/training_log.csv', append=True, separator=',')
+model.fit_generator(
+  generator=training_generator,
+  epochs=NUMBER_OF_EPOCHS,
+  steps_per_epoch=TOTAL_TRAINING_BATCHES,
+  callbacks=[training_logger]
+)
 
 print('')
 print('Training Completed!')
