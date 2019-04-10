@@ -146,7 +146,7 @@ model.add(Activation('softmax'))
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
 # plot model to the file
-plot_model(model, show_shapes=True, to_file='network-structure.png')
+plot_model(model, show_shapes=True, to_file='results/network-structure.png')
 
 model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
