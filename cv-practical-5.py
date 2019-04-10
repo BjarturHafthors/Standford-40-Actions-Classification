@@ -5,7 +5,8 @@ import math
 import numpy as np
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Flatten
+from keras.layers.normalization import BatchNormalization
+from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import plot_model
@@ -134,16 +135,21 @@ testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, getDatasetL
 model = Sequential()
 
 model.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
+model.add(BatchNormalization())
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Dropout(0.5))
 
 model.add(Conv2D(32, (3, 3)))
+model.add(BatchNormalization())
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
+model.add(Dropout(0.5))
+
 model.add(Flatten())
-model.add(Dense(40))
-model.add(Activation('softmax'))
+model.add(Dense(40, activation="softmax"))
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
@@ -158,9 +164,11 @@ print('')
 print('Starting training!')
 print('')
 
-training_logger = CSVLogger('results/training_log.csv', append=True, separator=',')
+training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
 model.fit_generator(
   generator=training_generator,
+  validation_data=testing_generator,
+  validation_steps=TOTAL_TESTING_BATCHES,
   epochs=NUMBER_OF_EPOCHS,
   steps_per_epoch=TOTAL_TRAINING_BATCHES,
   callbacks=[training_logger]
@@ -172,9 +180,9 @@ print('')
 
 ## TODO: Part 5: Print results
 
-score = model.evaluate_generator(generator=testing_generator, steps=TOTAL_TESTING_BATCHES)
+'''score = model.evaluate_generator(generator=testing_generator, steps=TOTAL_TESTING_BATCHES)
 
 print('')
 print('Test score: ' +  str(score[0]))
 print('Test accuracy:' +  str(score[1]))
-print('')
+print('')'''
