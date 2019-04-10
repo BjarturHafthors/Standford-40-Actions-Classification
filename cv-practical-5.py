@@ -7,6 +7,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
+from keras.utils import plot_model
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -143,6 +144,9 @@ model.add(Dense(40))
 model.add(Activation('softmax'))
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+
+# plot model to the file
+plot_model(model, to_file='network-structure.png')
 
 model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
