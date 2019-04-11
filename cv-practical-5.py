@@ -99,7 +99,7 @@ def getDatasetLabels(file_list):
 
     return label_dictionary
 
-def DataGenerator(image_set_filenames, batch_size, class_labels, randomize=True):
+def getDataGenerator(image_set_filenames, batch_size, class_labels, randomize=True):
   while 1:
     # Ensure randomisation per epoch (use only for training)
     if randomize:
@@ -197,8 +197,8 @@ while (True):
   if (user_input == '1'):
     print('Starting classifier training...')
 
-    training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
-    validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
+    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
+    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
     classifier = createBasicClassifier(plot=True)
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
@@ -218,7 +218,7 @@ while (True):
     print('Starting classifier evaluation...')
 
     classifier = load_model(TRAINED_CLASSIFIER_FILE)
-    testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
+    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
     score = classifier.evaluate_generator(
       generator=testing_generator,
