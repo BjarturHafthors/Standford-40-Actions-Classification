@@ -13,7 +13,7 @@ from keras.utils import plot_model
 from keras.callbacks import CSVLogger
 
 from sklearn.metrics import confusion_matrix
-from pprint import pprint
+import sys
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -225,5 +225,10 @@ confussion_matrix = confusion_matrix(
   predicted_testing_labels[:len(actual_testing_labels)].argmax(axis=1)
 )
 
-print('Confussion Matrix:')
-# print 'confussion_matrix'
+print('Writing confussion matrix to the file...')
+
+np.set_printoptions(threshold=sys.maxsize)
+with open('results/confussion_matrix.txt', 'w') as f:
+  f.write(np.array2string(confussion_matrix, separator=', '))
+
+print('Confussion matrix saved!')
