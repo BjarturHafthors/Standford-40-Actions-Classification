@@ -27,7 +27,7 @@ DATASET_PATH = "data\\images\\"
 IMAGE_DIMENSION = 48
 
 def loadImage(filename):
-    #Save label
+    # Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
 
     # Load image with flag "Greyscale"
@@ -227,8 +227,11 @@ confussion_matrix = confusion_matrix(
 
 print('Writing confussion matrix to the file...')
 
-np.set_printoptions(threshold=sys.maxsize)
-with open('results/confussion_matrix.txt', 'w') as f:
-  f.write(np.array2string(confussion_matrix, separator=', '))
+np.savetxt(
+  "results/confussion_matrix.csv",
+  np.asarray(confussion_matrix),
+  fmt="%d",
+  delimiter=","
+)
 
 print('Confussion matrix saved!')
