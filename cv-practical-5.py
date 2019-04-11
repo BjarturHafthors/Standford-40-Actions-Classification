@@ -14,16 +14,15 @@ from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model
 
 from sklearn.metrics import confusion_matrix
-import cmd
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
+TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
+TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 25
-TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
-TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 IMAGE_DIMENSION = 48
 
 DATASET_PATH = "data/images/"
