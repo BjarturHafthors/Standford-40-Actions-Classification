@@ -17,7 +17,7 @@ TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 16
+NUMBER_OF_EPOCHS = 1
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
@@ -88,7 +88,7 @@ def getDatasetLabels(file_list):
 
     return label_dictionary
 
-def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
+def DataGenerator(image_set_filenames, batch_size, class_labels):
   while 1:
     # Ensure randomisation per epoch
     random.shuffle(image_set_filenames)
@@ -104,12 +104,12 @@ def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
       X.append(image_info[0])
 
       #Append image label one-hot vector to Y
-      Y.append(np.eye(NUMBER_OF_CLASSES)[class_label_dictionary[image_info[1]]])
+      Y.append(np.eye(NUMBER_OF_CLASSES)[class_labels[image_info[1]]])
 
       #Comparing count and batch size to see if batch size reached
       #We can emit using count by simply using i+1, as that's exactly
       #what count would amount to
-      if (i+1) % batch_size == 0:
+      if (i + 1) % batch_size == 0:
         X = np.array(X)
         Y = np.array(Y)
 
@@ -120,6 +120,36 @@ def DataGenerator(image_set_filenames, batch_size, class_label_dictionary):
         X = []
         Y = []
 
+def createBasicClassifier(plot=False):
+  classifier = Sequential()
+
+  classifier.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
+  classifier.add(BatchNormalization())
+  classifier.add(Activation('relu'))
+  classifier.add(MaxPooling2D(pool_size=(2, 2)))
+
+  classifier.add(Dropout(0.5))
+
+  classifier.add(Conv2D(32, (3, 3)))
+  classifier.add(BatchNormalization())
+  classifier.add(Activation('relu'))
+  classifier.add(MaxPooling2D(pool_size=(2, 2)))
+
+  classifier.add(Dropout(0.5))
+
+  classifier.add(Flatten())
+  classifier.add(Dense(40, activation="softmax"))
+
+  sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+
+  # plot cnn structure to the file
+  if (plot):
+    plot_model(classifier, show_shapes=True, to_file='results/network-structure.png')
+
+  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+  
+  return classifier
+
 ## Part 1: Split filenames into training and test sets
 
 training_set_filenames = getDatasetFilenames("data\\image-splits\\train.txt")
@@ -127,36 +157,15 @@ testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
 
 ## Part 2: Create Generators
 
-training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, getDatasetLabels(training_set_filenames))
-testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, getDatasetLabels(training_set_filenames))
+class_labels = getDatasetLabels(training_set_filenames)
 
-## TODO: Part 3: Construct model
+training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
+validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
+testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
 
-model = Sequential()
+## TODO: Part 3: Construct classifier (cnn)
 
-model.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-
-model.add(Dropout(0.5))
-
-model.add(Conv2D(32, (3, 3)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-
-model.add(Dropout(0.5))
-
-model.add(Flatten())
-model.add(Dense(40, activation="softmax"))
-
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-
-# plot model to the file
-plot_model(model, show_shapes=True, to_file='results/network-structure.png')
-
-model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+classifier = createBasicClassifier(plot=True)
 
 ## TODO: Part 4: Train model
 
@@ -165,9 +174,9 @@ print('Starting training!')
 print('')
 
 training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
-model.fit_generator(
+classifier.fit_generator(
   generator=training_generator,
-  validation_data=testing_generator,
+  validation_data=validation_generator,
   validation_steps=TOTAL_TESTING_BATCHES,
   epochs=NUMBER_OF_EPOCHS,
   steps_per_epoch=TOTAL_TRAINING_BATCHES,
@@ -178,11 +187,14 @@ print('')
 print('Training Completed!')
 print('')
 
-## TODO: Part 5: Print results
+## TODO: Part 5: Evaluate (test) clasiffier
 
-'''score = model.evaluate_generator(generator=testing_generator, steps=TOTAL_TESTING_BATCHES)
+score = classifier.evaluate_generator(
+  generator=testing_generator,
+  steps=TOTAL_TESTING_BATCHES
+)
 
 print('')
 print('Test score: ' +  str(score[0]))
 print('Test accuracy:' +  str(score[1]))
-print('')'''
+print('')
