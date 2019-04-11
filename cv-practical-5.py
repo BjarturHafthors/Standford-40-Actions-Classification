@@ -192,7 +192,7 @@ print('')
 
 training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
 
-mcp_save = ModelCheckpoint('results/.mdl_wts.hdf5', save_best_only=True, monitor='val_acc', mode='max')
+mcp_save = ModelCheckpoint('results/best_classifier.hdf5', save_best_only=True, monitor='val_acc', mode='max')
 
 classifier.fit_generator(
   generator=training_generator,
@@ -219,7 +219,7 @@ print('')
 # print('Test accuracy:' +  str(score[1]))
 # print('')
 
-classifier = load_model('results/.mdl_wts.hdf5')
+classifier = load_model('results/best_classifier.hdf5')
 
 predictions = classifier.predict_generator(
   generator=testing_generator,
