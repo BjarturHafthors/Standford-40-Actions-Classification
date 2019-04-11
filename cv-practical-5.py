@@ -10,7 +10,7 @@ from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import plot_model
-from keras.callbacks import CSVLogger
+from keras.callbacks import CSVLogger, ModelCheckpoint
 
 from sklearn.metrics import confusion_matrix
 import sys
@@ -189,13 +189,16 @@ print('Starting training!')
 print('')
 
 training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
+
+mcp_save = ModelCheckpoint('results/.mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
+
 classifier.fit_generator(
   generator=training_generator,
   validation_data=validation_generator,
   validation_steps=TOTAL_TESTING_BATCHES,
   epochs=NUMBER_OF_EPOCHS,
   steps_per_epoch=TOTAL_TRAINING_BATCHES,
-  callbacks=[training_logger]
+  callbacks=[training_logger, mcp_save]
 )
 
 print('')
