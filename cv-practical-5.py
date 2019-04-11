@@ -173,7 +173,7 @@ testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
 class_labels = getDatasetLabels(training_set_filenames)
 
 training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
-validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
+validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
 actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
@@ -227,15 +227,20 @@ confusion_matrix = confusion_matrix(
   predictions[:len(actual_testing_labels)].argmax(axis=1)
 )
 
-print('DEBUG:')
-print('class labels:')
-print(class_labels)
+sum = 0
+for i in range(len(class_labels)):
+  sum = sum + confusion_matrix[i][i]
+print('Prediction accuracy: ', sum / len(actual_testing_labels))
 
-print('actual testing labels:')
-print(actual_testing_labels)
+# print('DEBUG:')
+# print('class labels:')
+# print(class_labels)
 
-print('predicted testing labels:')
-print(predictions[:len(actual_testing_labels)].argmax(axis=1))
+# print('actual testing labels:')
+# print(actual_testing_labels)
+
+# print('predicted testing labels:')
+# print(predictions[:len(actual_testing_labels)].argmax(axis=1))
 
 print('Writing confusion matrix to the file...')
 
