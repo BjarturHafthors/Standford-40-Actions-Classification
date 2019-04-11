@@ -222,7 +222,7 @@ predictions = classifier.predict_generator(
   steps=TOTAL_TESTING_BATCHES
 )
 
-confussion_matrix = confusion_matrix(
+confusion_matrix = confusion_matrix(
   actual_testing_labels,    
   predictions[:len(actual_testing_labels)].argmax(axis=1)
 )
@@ -237,11 +237,11 @@ print(actual_testing_labels)
 print('predicted testing labels:')
 print(predictions[:len(actual_testing_labels)].argmax(axis=1))
 
-print('Writing confussion matrix to the file...')
+print('Writing confusion matrix to the file...')
 
 np.savetxt(
   "results/confussion_matrix.csv",
-  np.asarray(confussion_matrix),
+  np.asarray(confusion_matrix),
   fmt="%d",
   delimiter=","
 )
