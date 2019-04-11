@@ -245,10 +245,10 @@ print('Prediction accuracy: ', sum / len(actual_testing_labels))
 print('Writing confusion matrix to the file...')
 
 np.savetxt(
-  "results/confussion_matrix.csv",
+  "results/confusion_matrix.csv",
   np.asarray(confusion_matrix),
   fmt="%d",
   delimiter=","
 )
 
-print('Confussion matrix saved!')
+print('Confusion matrix saved!')
