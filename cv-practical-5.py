@@ -21,7 +21,7 @@ TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 30
+NUMBER_OF_EPOCHS = 25
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
@@ -88,6 +88,7 @@ def getDatasetLabels(file_list):
         label_list.append(file.rpartition('_')[0])
 
     label_list = list(set(label_list))
+    label_list.sort()
     label_dictionary = { label_list[i] : i for i in range(0, len(label_list) ) }
 
     return label_dictionary
@@ -171,7 +172,7 @@ testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
 
 ## Part 2: Create Generators
 
-class_labels = getDatasetLabels(training_set_filenames)
+class_labels = getDatasetLabels(testing_set_filenames)
 
 training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
 validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
