@@ -14,7 +14,7 @@ from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model
 
 from sklearn.metrics import confusion_matrix
-import sys
+import cmd
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -24,8 +24,15 @@ NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 25
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
-DATASET_PATH = "data\\images\\"
 IMAGE_DIMENSION = 48
+
+DATASET_PATH = "data/images/"
+TRAINING_DATA_FILE = "data/image-splits/train.txt"
+TESTING_DATA_FILE = "data/image-splits/test.txt"
+NETWORK_STRUCTURE_FILE = 'results/network-structure.png'
+TRAINING_LOG_FILE = 'results/training_log.csv'
+TRAINED_CLASSIFIER_FILE = 'results/trained_classifier.hdf5'
+CONFUSION_MATRIX_FILE = 'results/confusion_matrix.csv'
 
 def loadImage(filename):
     # Save label
@@ -159,7 +166,7 @@ def createBasicClassifier(plot=False):
 
   # plot cnn structure to the file
   if (plot):
-    plot_model(classifier, show_shapes=True, to_file='results/network-structure.png')
+    plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
 
   classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
   
@@ -167,92 +174,91 @@ def createBasicClassifier(plot=False):
 
 ## Part 1: Split filenames into training and test sets
 
-training_set_filenames = getDatasetFilenames("data\\image-splits\\train.txt")
-testing_set_filenames = getDatasetFilenames("data\\image-splits\\test.txt")
-
-## Part 2: Create Generators
+training_set_filenames = getDatasetFilenames(TRAINING_DATA_FILE)
+testing_set_filenames = getDatasetFilenames(TESTING_DATA_FILE)
 
 class_labels = getDatasetLabels(testing_set_filenames)
 
-training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
-validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
-testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
+while (True):
+  user_input = input(
+    '''
+    0 - exit
+    1 - train classifier
+    2 - evaluate classifier
+    3 - predict classes
+    Option:
+    '''
+  )
 
-actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
+  # exit
+  if (user_input == '0'):
+    exit()
 
-## Part 3: Construct classifier (cnn)
+  # train classifier
+  if (user_input == '1'):
+    print('Starting classifier training...')
 
-classifier = createBasicClassifier(plot=True)
+    training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
+    validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
-## Part 4: Train model
+    classifier = createBasicClassifier(plot=True)
+    training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
+    classifier_recorded = ModelCheckpoint(TRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
+    classifier.fit_generator(
+      generator=training_generator,
+      validation_data=validation_generator,
+      validation_steps=TOTAL_TESTING_BATCHES,
+      epochs=NUMBER_OF_EPOCHS,
+      steps_per_epoch=TOTAL_TRAINING_BATCHES,
+      callbacks=[training_logger, classifier_recorded]
+    )
+    print('Classifier has been trained succesfully!')
 
-print('')
-print('Starting training!')
-print('')
+  # evaluate classifier
+  if (user_input == '2'):
+    print('Starting classifier evaluation...')
 
-training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
+    classifier = load_model(TRAINED_CLASSIFIER_FILE)
+    testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
-mcp_save = ModelCheckpoint('results/best_classifier.hdf5', save_best_only=True, monitor='val_acc', mode='max')
+    score = classifier.evaluate_generator(
+      generator=testing_generator,
+      steps=TOTAL_TESTING_BATCHES
+    )
 
-classifier.fit_generator(
-  generator=training_generator,
-  validation_data=validation_generator,
-  validation_steps=TOTAL_TESTING_BATCHES,
-  epochs=NUMBER_OF_EPOCHS,
-  steps_per_epoch=TOTAL_TRAINING_BATCHES,
-  callbacks=[training_logger, mcp_save]
-)
+    print('Test score: ' +  str(score[0]))
+    print('Test accuracy:' +  str(score[1]))
+    print('Classifier has been evaluated successfully!')
 
-print('')
-print('Training Completed!')
-print('')
+  # prediction of classes
+  if (user_input == '3'):
+    print('Starting prediction of classes...')
 
-## Part 5: Evaluate (test) clasiffier
+    testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
+    classifier = load_model(TRAINED_CLASSIFIER_FILE)
 
-# score = classifier.evaluate_generator(
-#   generator=testing_generator,
-#   steps=TOTAL_TESTING_BATCHES
-# )
+    predictions = classifier.predict_generator(
+      generator=testing_generator,
+      steps=TOTAL_TESTING_BATCHES
+    )
 
-# print('')
-# print('Test score: ' +  str(score[0]))
-# print('Test accuracy:' +  str(score[1]))
-# print('')
+    actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
 
-classifier = load_model('results/best_classifier.hdf5')
+    confusion_matrix = confusion_matrix(
+      actual_testing_labels,    
+      predictions[:len(actual_testing_labels)].argmax(axis=1)
+    )
 
-predictions = classifier.predict_generator(
-  generator=testing_generator,
-  steps=TOTAL_TESTING_BATCHES
-)
+    total_true_guesses = 0
+    for i in range(len(class_labels)):
+      total_true_guesses += confusion_matrix[i][i]
+    print('Prediction accuracy (based on confusion matrix): ', total_true_guesses / len(actual_testing_labels))
 
-confusion_matrix = confusion_matrix(
-  actual_testing_labels,    
-  predictions[:len(actual_testing_labels)].argmax(axis=1)
-)
-
-sum = 0
-for i in range(len(class_labels)):
-  sum = sum + confusion_matrix[i][i]
-print('Prediction accuracy: ', sum / len(actual_testing_labels))
-
-# print('DEBUG:')
-# print('class labels:')
-# print(class_labels)
-
-# print('actual testing labels:')
-# print(actual_testing_labels)
-
-# print('predicted testing labels:')
-# print(predictions[:len(actual_testing_labels)].argmax(axis=1))
-
-print('Writing confusion matrix to the file...')
-
-np.savetxt(
-  "results/confusion_matrix.csv",
-  np.asarray(confusion_matrix),
-  fmt="%d",
-  delimiter=","
-)
-
-print('Confusion matrix saved!')
+    print('Writing confusion matrix to the file...')
+    np.savetxt(
+      CONFUSION_MATRIX_FILE,
+      np.asarray(confusion_matrix),
+      fmt="%d",
+      delimiter=","
+    )
+    print('Classes have been predicted, confusion matrix written into the file successfully!')
