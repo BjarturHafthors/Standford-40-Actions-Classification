@@ -17,7 +17,7 @@ TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 1
+NUMBER_OF_EPOCHS = 25
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
@@ -163,11 +163,11 @@ training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_lab
 validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
 testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
 
-## TODO: Part 3: Construct classifier (cnn)
+## Part 3: Construct classifier (cnn)
 
 classifier = createBasicClassifier(plot=True)
 
-## TODO: Part 4: Train model
+## Part 4: Train model
 
 print('')
 print('Starting training!')
@@ -187,7 +187,7 @@ print('')
 print('Training Completed!')
 print('')
 
-## TODO: Part 5: Evaluate (test) clasiffier
+## Part 5: Evaluate (test) clasiffier
 
 score = classifier.evaluate_generator(
   generator=testing_generator,
