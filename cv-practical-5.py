@@ -20,7 +20,7 @@ TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 25
+NUMBER_OF_EPOCHS = 1
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
@@ -221,12 +221,21 @@ predictions = classifier.predict_generator(
   generator=testing_generator,
   steps=TOTAL_TESTING_BATCHES
 )
-predicted_testing_labels = np.rint(predictions)
 
 confusion_matrix = confusion_matrix(
   actual_testing_labels,    
-  predicted_testing_labels[:len(actual_testing_labels)].argmax(axis=1)
+  predictions[:len(actual_testing_labels)].argmax(axis=1)
 )
+
+print('DEBUG:')
+print('class labels:')
+print(class_labels)
+
+print('actual testing labels:')
+print(actual_testing_labels)
+
+print('predicted testing labels:')
+print(predictions[:len(actual_testing_labels)].argmax(axis=1))
 
 print('Writing confusion matrix to the file...')
 
