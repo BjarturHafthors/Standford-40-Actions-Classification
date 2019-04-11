@@ -11,6 +11,7 @@ from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import plot_model
 from keras.callbacks import CSVLogger, ModelCheckpoint
+from keras.models import load_model
 
 from sklearn.metrics import confusion_matrix
 import sys
@@ -20,7 +21,7 @@ TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 25
+NUMBER_OF_EPOCHS = 30
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 DATASET_PATH = "data\\images\\"
@@ -216,6 +217,8 @@ print('')
 # print('Test score: ' +  str(score[0]))
 # print('Test accuracy:' +  str(score[1]))
 # print('')
+
+classifier = load_model('results/.mdl_wts.hdf5')
 
 predictions = classifier.predict_generator(
   generator=testing_generator,
