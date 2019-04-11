@@ -191,7 +191,7 @@ print('')
 
 training_logger = CSVLogger('results/training_log.csv', append=False, separator=',')
 
-mcp_save = ModelCheckpoint('results/.mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('results/.mdl_wts.hdf5', save_best_only=True, monitor='val_acc', mode='max')
 
 classifier.fit_generator(
   generator=training_generator,
