@@ -12,6 +12,9 @@ from keras.optimizers import SGD
 from keras.utils import plot_model
 from keras.callbacks import CSVLogger
 
+from sklearn.metrics import confusion_matrix
+from pprint import pprint
+
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
@@ -88,10 +91,11 @@ def getDatasetLabels(file_list):
 
     return label_dictionary
 
-def DataGenerator(image_set_filenames, batch_size, class_labels):
+def DataGenerator(image_set_filenames, batch_size, class_labels, randomize=True):
   while 1:
-    # Ensure randomisation per epoch
-    random.shuffle(image_set_filenames)
+    # Ensure randomisation per epoch (use only for training)
+    if randomize:
+      random.shuffle(image_set_filenames)
 
     X = []
     Y = []
@@ -119,6 +123,15 @@ def DataGenerator(image_set_filenames, batch_size, class_labels):
         #Resetting X and Y
         X = []
         Y = []
+
+def getActualDatasetLabels(image_set_filenames, class_labels):
+  actual_labels = []
+
+  for filename in image_set_filenames:
+    label = filename.rpartition('_')[0].split('\\')[-1]
+    actual_labels.append(class_labels[label])
+
+  return actual_labels
 
 def createBasicClassifier(plot=False):
   classifier = Sequential()
@@ -161,13 +174,15 @@ class_labels = getDatasetLabels(training_set_filenames)
 
 training_generator = DataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
 validation_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
-testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels)
+testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
 
-## TODO: Part 3: Construct classifier (cnn)
+actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
+
+## Part 3: Construct classifier (cnn)
 
 classifier = createBasicClassifier(plot=True)
 
-## TODO: Part 4: Train model
+## Part 4: Train model
 
 print('')
 print('Starting training!')
@@ -187,14 +202,28 @@ print('')
 print('Training Completed!')
 print('')
 
-## TODO: Part 5: Evaluate (test) clasiffier
+## Part 5: Evaluate (test) clasiffier
 
-score = classifier.evaluate_generator(
+# score = classifier.evaluate_generator(
+#   generator=testing_generator,
+#   steps=TOTAL_TESTING_BATCHES
+# )
+
+# print('')
+# print('Test score: ' +  str(score[0]))
+# print('Test accuracy:' +  str(score[1]))
+# print('')
+
+predictions = classifier.predict_generator(
   generator=testing_generator,
   steps=TOTAL_TESTING_BATCHES
 )
+predicted_testing_labels = np.rint(predictions)
 
-print('')
-print('Test score: ' +  str(score[0]))
-print('Test accuracy:' +  str(score[1]))
-print('')
+confussion_matrix = confusion_matrix(
+  actual_testing_labels,    
+  predicted_testing_labels[:len(actual_testing_labels)].argmax(axis=1)
+)
+
+print('Confussion Matrix:')
+# print 'confussion_matrix'
