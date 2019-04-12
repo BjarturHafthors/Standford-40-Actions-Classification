@@ -4,7 +4,7 @@ import random
 import math
 import numpy as np
 
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
@@ -14,6 +14,10 @@ from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model
 
 from sklearn.metrics import confusion_matrix
+
+# pretrained model
+from keras import applications
+from keras.applications.resnet50 import resnet50
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -33,12 +37,15 @@ TRAINING_LOG_FILE = 'results/training_log.csv'
 TRAINED_CLASSIFIER_FILE = 'results/trained_classifier.hdf5'
 CONFUSION_MATRIX_FILE = 'results/confusion_matrix.csv'
 
-def loadImage(filename):
+def loadImage(filename, greyscale=True):
     # Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
 
     # Load image with flag "Greyscale"
-    image = cv2.imread(DATASET_PATH + filename, 0)
+    if (greyscale):
+      image = cv2.imread(DATASET_PATH + filename, 0)
+    else:
+      image = cv2.imread(DATASET_PATH + filename, 1)
 
     # Get height and width, but skip channels
     height, width = image.shape[:2]
@@ -72,7 +79,10 @@ def loadImage(filename):
     normalized_image = resized_image / 255.0
     
     # Needed so that the network recognizes the shape
-    reshaped_image = np.reshape(normalized_image, (IMAGE_DIMENSION, IMAGE_DIMENSION, 1))
+    if (greyscale):
+      reshaped_image = np.reshape(normalized_image, (IMAGE_DIMENSION, IMAGE_DIMENSION, 1))
+    else:
+      reshaped_image = np.reshape(normalized_image, (IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
 
     return (reshaped_image, label)
 
@@ -99,7 +109,7 @@ def getDatasetLabels(file_list):
 
     return label_dictionary
 
-def getDataGenerator(image_set_filenames, batch_size, class_labels, randomize=True):
+def getDataGenerator(image_set_filenames, batch_size, class_labels, randomize=True, greyscale=True):
   while 1:
     # Ensure randomisation per epoch (use only for training)
     if randomize:
@@ -110,7 +120,7 @@ def getDataGenerator(image_set_filenames, batch_size, class_labels, randomize=Tr
     
     for i in range(len(image_set_filenames)):
       #Load image
-      image_info = loadImage(image_set_filenames[i])
+      image_info = loadImage(image_set_filenames[i], greyscale=greyscale)
 
       #Append image data to X
       X.append(image_info[0])
@@ -185,6 +195,7 @@ while (True):
     1 - train classifier
     2 - evaluate classifier
     3 - predict classes
+    4 - test pre-trained model (Xception)
     Option:
     '''
   )
@@ -261,3 +272,40 @@ while (True):
       delimiter=","
     )
     print('Classes have been predicted, confusion matrix written into the file successfully!')
+
+  if (user_input == '4'):
+    print('Running pretrained classifier...')
+
+    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False)
+    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
+    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
+
+    base_model = applications.vgg19.VGG19(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
+
+    # add a new top layer
+    x = base_model.output
+    x = Flatten()(x)
+    predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
+
+    # this is the model we will train
+    classifier = Model(inputs=base_model.input, outputs=predictions)
+    
+    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    classifier.fit_generator(
+      generator=training_generator,
+      # validation_data=validation_generator,
+      # validation_steps=TOTAL_TESTING_BATCHES,
+      epochs=NUMBER_OF_EPOCHS,
+      steps_per_epoch=TOTAL_TRAINING_BATCHES,
+    )
+
+    score = classifier.evaluate_generator(
+      generator=testing_generator,
+      steps=TOTAL_TESTING_BATCHES
+    )
+
+    print('Test score: ' +  str(score[0]))
+    print('Test accuracy:' +  str(score[1]))
+    print('Pretrained classifier has been evaluated successfully!')
