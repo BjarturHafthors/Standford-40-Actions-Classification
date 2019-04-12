@@ -281,6 +281,9 @@ while (True):
     testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
 
     base_model = applications.vgg19.VGG19(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
+    
+    for layer in base_model.layers:
+      layer.trainable = False
 
     # add a new top layer
     x = base_model.output
@@ -289,7 +292,7 @@ while (True):
 
     # this is the model we will train
     classifier = Model(inputs=base_model.input, outputs=predictions)
-    
+
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
