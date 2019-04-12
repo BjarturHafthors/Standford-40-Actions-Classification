@@ -292,14 +292,18 @@ while (True):
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
+    training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
+    classifier_recorded = ModelCheckpoint(TRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
       generator=training_generator,
       validation_data=validation_generator,
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
+      callbacks=[training_logger, classifier_recorded]
     )
 
+    classifier = load_model(TRAINED_CLASSIFIER_FILE)
     score = classifier.evaluate_generator(
       generator=testing_generator,
       steps=TOTAL_TESTING_BATCHES
