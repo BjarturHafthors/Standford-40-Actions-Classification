@@ -12,12 +12,9 @@ from keras.optimizers import SGD
 from keras.utils import plot_model
 from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.models import load_model
+from keras import applications
 
 from sklearn.metrics import confusion_matrix
-
-# pretrained model
-from keras import applications
-from keras.applications.resnet50 import resnet50
 
 BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
@@ -195,7 +192,7 @@ while (True):
     1 - train classifier
     2 - evaluate classifier
     3 - predict classes
-    4 - test pre-trained model (Xception)
+    4 - test pre-trained model (VGG19)
     Option:
     '''
   )
@@ -280,15 +277,13 @@ while (True):
     validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
     testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
 
-    # base_model = applications.vgg19.VGG19(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
-    base_model = applications.mobilenet_v2.MobileNetV2(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
-    
+    base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+
     for layer in base_model.layers:
       layer.trainable = False
 
     # add a new top layer
     x = base_model.output
-    x = Flatten()(x)
     predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
 
     # this is the model we will train
@@ -296,7 +291,6 @@ while (True):
 
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-    # classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     classifier.fit_generator(
       generator=training_generator,
