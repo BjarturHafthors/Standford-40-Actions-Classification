@@ -26,7 +26,7 @@ TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 25
+NUMBER_OF_EPOCHS = 10
 IMAGE_DIMENSION = 48
 
 DATASET_PATH = "data/images/"
@@ -280,7 +280,8 @@ while (True):
     validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
     testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
 
-    base_model = applications.vgg19.VGG19(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
+    # base_model = applications.vgg19.VGG19(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
+    base_model = applications.mobilenet_v2.MobileNetV2(weights = None, include_top=False, input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3))
     
     for layer in base_model.layers:
       layer.trainable = False
@@ -293,9 +294,9 @@ while (True):
     # this is the model we will train
     classifier = Model(inputs=base_model.input, outputs=predictions)
 
-    # sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    # classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-    classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    # classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     classifier.fit_generator(
       generator=training_generator,
