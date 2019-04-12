@@ -233,7 +233,7 @@ while (True):
   if (user_input == '3'):
     print('Starting prediction of classes...')
 
-    testing_generator = DataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
+    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
     classifier = load_model(TRAINED_CLASSIFIER_FILE)
 
     predictions = classifier.predict_generator(
