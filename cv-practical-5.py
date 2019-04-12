@@ -293,13 +293,14 @@ while (True):
     # this is the model we will train
     classifier = Model(inputs=base_model.input, outputs=predictions)
 
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    # sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    # classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     classifier.fit_generator(
       generator=training_generator,
-      # validation_data=validation_generator,
-      # validation_steps=TOTAL_TESTING_BATCHES,
+      validation_data=validation_generator,
+      validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
     )
