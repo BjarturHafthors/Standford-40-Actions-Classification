@@ -159,6 +159,7 @@ def createBasicClassifier(plot=False):
   classifier.add(Dropout(0.5))
 
   classifier.add(Flatten())
+  classifier.add(Dense(3200, activation="relu"))
   classifier.add(Dense(40, activation="softmax"))
 
   sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
