@@ -257,8 +257,8 @@ def testClassifier(classifier, greyscale=True):
   print('Classes have been predicted, confusion matrix written into the file successfully!')
 
 def expDecay(epoch):
-   initial_learning_rate = 0.01
-   k = 0.0005
+   initial_learning_rate = 0.015
+   k = 0.05
    learning_rate = initial_learning_rate * math.exp(-k * epoch)
 
    return learning_rate
@@ -294,7 +294,7 @@ while (True):
 
     classifier = createBasicClassifier(plot=True)
 
-    lrate = LearningRateScheduler(expDecay)
+    lrate = LearningRateScheduler(expDecay, verbose=1)
 
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
     classifier_recorder = ModelCheckpoint(BASIC_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
