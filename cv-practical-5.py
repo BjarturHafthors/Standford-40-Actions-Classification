@@ -24,7 +24,7 @@ TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 30
+NUMBER_OF_EPOCHS = 50
 IMAGE_DIMENSION = 48
 
 DATASET_PATH = "data/images/"
@@ -182,10 +182,12 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
     classifier.add(Dense(40, activation="softmax"))
 
   if (custom_learning_rate):
-    learning_rate = 0.1
-    decay_rate = learning_rate / NUMBER_OF_EPOCHS
+    # learning_rate = 0.1
+    # decay_rate = learning_rate / NUMBER_OF_EPOCHS
+    # momentum = 0.8
+    # sgd = SGD(lr=learning_rate, momentum=momentum, decay=decay_rate, nesterov=False)
     momentum = 0.8
-    sgd = SGD(lr=learning_rate, momentum=momentum, decay=decay_rate, nesterov=False)
+    sgd = SGD(lr=0.0, momentum=momentum, decay=0.0, nesterov=False)
   else:
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
@@ -259,8 +261,8 @@ def testClassifier(classifier, greyscale=True):
   print('Classes have been predicted, confusion matrix written into the file successfully!')
 
 def expDecay(epoch):
-   initial_learning_rate = 0.1
-   k = 0.1
+   initial_learning_rate = 0.01
+   k = 0.001
    learning_rate = initial_learning_rate * math.exp(-k * epoch)
 
    return learning_rate
