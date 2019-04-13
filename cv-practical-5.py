@@ -8,7 +8,7 @@ from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.utils import plot_model
 from keras.callbacks import CSVLogger, ModelCheckpoint, LearningRateScheduler
 from keras.models import load_model
@@ -182,16 +182,12 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
     classifier.add(Dense(40, activation="softmax"))
 
   if (custom_learning_rate):
-    # learning_rate = 0.1
-    # decay_rate = learning_rate / NUMBER_OF_EPOCHS
-    # momentum = 0.8
-    # sgd = SGD(lr=learning_rate, momentum=momentum, decay=decay_rate, nesterov=False)
-    momentum = 0.8
-    sgd = SGD(lr=0.0, momentum=momentum, decay=0.0, nesterov=False)
+    optimizer_function = SGD(lr=0.0, momentum=0.8, decay=0.0, nesterov=False)
+    # optimizer_function = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
   else:
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    optimizer_function = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 
-  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+  classifier.compile(optimizer=optimizer_function, loss='categorical_crossentropy', metrics=['accuracy'])
   
   # plot cnn structure to the file
   if (plot):
@@ -262,7 +258,7 @@ def testClassifier(classifier, greyscale=True):
 
 def expDecay(epoch):
    initial_learning_rate = 0.01
-   k = 0.001
+   k = 0.0005
    learning_rate = initial_learning_rate * math.exp(-k * epoch)
 
    return learning_rate
