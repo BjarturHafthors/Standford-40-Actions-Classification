@@ -304,9 +304,11 @@ def testClassifier(classifier, greyscale=True):
   )
   print('Classes have been predicted, confusion matrix written into the file successfully!')
 
+INITIAL_LEARNING_RATE = 0.0125
+LEARNING_RATE_DECAY = 0.035
 def expDecay(epoch):
-   initial_learning_rate = 0.0125
-   k = 0.035
+   initial_learning_rate = INITIAL_LEARNING_RATE
+   k = LEARNING_RATE_DECAY
    learning_rate = initial_learning_rate * math.exp(-k * epoch)
 
    return learning_rate
@@ -400,30 +402,42 @@ while (True):
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
-    for i in range(10):
-      classifier.fit_generator(
-        generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
-        epochs=1,
-        steps_per_epoch=TOTAL_TRAINING_BATCHES,
-      )
-      classifier.save_weights(CONFIGURABLE_MODEL_WEIGHTS_FILE)
+    for i in range(0, 2): # dense layers
+      for j in range(1, 3): # parameters per first layer
+        for k in range(1, 3): # parameters per second layer
+          for l in range(1, 5): # parameters per learning rate
+            for r in range(1, 5): # parameters per regularization value
+              classifier.fit_generator(
+                generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
+                epochs=1,
+                steps_per_epoch=TOTAL_TRAINING_BATCHES,
+              )
+              classifier.save_weights(CONFIGURABLE_MODEL_WEIGHTS_FILE)
 
-      score = classifier.evaluate_generator(
-        generator=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
-        steps=TOTAL_TESTING_BATCHES
-      )
-      print('------------------------------------- Test accuracy:' +  str(score[1]))
-      if (score[1] > best_validation_accuracy):
-        best_validation_accuracy = score[1]
-        classifier.save(BEST_AUTOMATIC_MODEL_FILE)
+              score = classifier.evaluate_generator(
+                generator=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
+                steps=TOTAL_TESTING_BATCHES
+              )
+              print('------------------------------------- Test accuracy:' +  str(score[1]))
+              if (score[1] > best_validation_accuracy):
+                print('!!! NEW BEST MODEL ENCOUNTERED !!!')
+                best_validation_accuracy = score[1]
+                classifier.save(BEST_AUTOMATIC_MODEL_FILE)
 
-      classifier = reconfigureClassifier(
-        model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
-        learning_rate=0.01 + i * 0.005,
-        regularization_value=0.01 + i * 0.005,
-        amount_of_dense_layers=2,
-        amount_of_nodes_per_layer=[512, 256]
-      )
+              initial_learning_rate = 0.0
+              initil_regularization_value = 0.0
+              # initial_amount_of_dense_layers = 0
+              initial_amount_of_nodes_per_layer = 1
+
+              print('Reconfiguring classifier:')
+              print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
+              classifier = reconfigureClassifier(
+                model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
+                learning_rate=initial_learning_rate + l * 0.0025,
+                regularization_value=initil_regularization_value + r * 0.0025,
+                amount_of_dense_layers=i,
+                amount_of_nodes_per_layer=[j, k]
+              )
 
     print('Done.')
 
