@@ -17,7 +17,7 @@ from keras import regularizers
 
 from sklearn.metrics import confusion_matrix
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32 #64 previously
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
@@ -320,6 +320,11 @@ testing_set_filenames = getDatasetFilenames(TESTING_DATA_FILE)
 
 class_labels = getDatasetLabels(testing_set_filenames)
 
+# limits how much GPU resources can tensorflow access
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
+session = tf.Session(config=config)
+
 while (True):
   user_input = input(
     '''
@@ -402,6 +407,10 @@ while (True):
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
+    epochs_in_a_row = 0
+    is_improving = True
+    break_threshold = 2
+
     for i in range(0, 2): # dense layers
       for j in range(1, 3): # parameters per first layer
         for k in range(1, 3): # parameters per second layer
@@ -423,6 +432,16 @@ while (True):
                 print('!!! NEW BEST MODEL ENCOUNTERED !!!')
                 best_validation_accuracy = score[1]
                 classifier.save(BEST_AUTOMATIC_MODEL_FILE)
+
+                is_improving = True
+                epochs_in_a_row = 0
+
+              if (epochs_in_a_row >= break_threshold and not is_improving):
+                print('not improving, breaking loop!')
+                is_improving = False
+                break
+
+              epochs_in_a_row += 1
 
               initial_learning_rate = 0.0
               initil_regularization_value = 0.0
