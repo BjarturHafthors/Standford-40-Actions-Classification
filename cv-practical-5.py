@@ -439,6 +439,7 @@ while (True):
               if (epochs_in_a_row >= break_threshold and not is_improving):
                 print('not improving, breaking loop!')
                 is_improving = False
+                epochs_in_a_row = 0
                 break
 
               epochs_in_a_row += 1
