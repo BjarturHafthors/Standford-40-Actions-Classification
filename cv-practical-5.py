@@ -304,7 +304,7 @@ while (True):
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
-      callbacks=[training_logger, classifier_recorder, lrate]
+      callbacks=[lrate, training_logger, classifier_recorder]
     )
     print('Classifier has been trained succesfully!')
 
