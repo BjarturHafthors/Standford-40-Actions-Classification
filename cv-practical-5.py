@@ -23,7 +23,7 @@ TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 100
+NUMBER_OF_EPOCHS = 1
 IMAGE_DIMENSION = 48
 
 DATASET_PATH = "data/images/"
@@ -31,7 +31,8 @@ TRAINING_DATA_FILE = "data/image-splits/train.txt"
 TESTING_DATA_FILE = "data/image-splits/test.txt"
 NETWORK_STRUCTURE_FILE = 'results/network-structure.png'
 TRAINING_LOG_FILE = 'results/training_log.csv'
-TRAINED_CLASSIFIER_FILE = 'results/trained_classifier.hdf5'
+BASIC_CLASSIFIER_FILE = 'results/basic_classifier.h5'
+PRETRAINED_CLASSIFIER_FILE = 'results/pretrained_classifier.h5'
 CONFUSION_MATRIX_FILE = 'results/confusion_matrix.csv'
 
 def loadImage(filename, greyscale=True):
@@ -169,14 +170,71 @@ def createBasicClassifier(plot=False):
   classifier.add(Dense(40, activation="softmax"))
 
   sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+  
+  # plot cnn structure to the file
+  if (plot):
+    plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
+
+  return classifier
+
+def createPretrainedClassifier(plot=False):
+  base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+
+  for layer in base_model.layers:
+    layer.trainable = False
+
+  # add a new top layer
+  x = base_model.output
+  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
+
+  # this is the model we will train
+  classifier = Model(inputs=base_model.input, outputs=predictions)
+
+  sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
   # plot cnn structure to the file
   if (plot):
     plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
 
-  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-  
   return classifier
+
+def testClassifier(classifier, greyscale=True):
+  print('Starting classifier testing...')
+
+  score = classifier.evaluate_generator(
+    generator=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=greyscale),
+    steps=TOTAL_TESTING_BATCHES
+  )
+  print('Test score: ' +  str(score[0]))
+  print('Test accuracy:' +  str(score[1]))
+
+  print('Starting prediction of classes...')
+  predictions = classifier.predict_generator(
+    generator=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=greyscale),
+    steps=TOTAL_TESTING_BATCHES
+  )
+
+  actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
+  matrix = confusion_matrix(
+    actual_testing_labels,
+    predictions[:len(actual_testing_labels)].argmax(axis=1)
+  )
+
+  total_true_guesses = 0
+  for i in range(len(class_labels)):
+    total_true_guesses += matrix[i][i]
+  print('Prediction accuracy (based on confusion matrix): ', total_true_guesses / len(actual_testing_labels))
+
+  print('Writing confusion matrix to the file...')
+  np.savetxt(
+    CONFUSION_MATRIX_FILE,
+    np.asarray(matrix),
+    fmt="%d",
+    delimiter=","
+  )
+  print('Classes have been predicted, confusion matrix written into the file successfully!')
 
 ## Part 1: Split filenames into training and test sets
 
@@ -189,10 +247,12 @@ while (True):
   user_input = input(
     '''
     0 - exit
-    1 - train classifier
-    2 - evaluate classifier
-    3 - predict classes
-    4 - test pre-trained model (VGG19)
+
+    1 - train basic classifier
+    2 - test basic classifier
+
+    3 - train pre-trained classifier (VGG19)
+    4 - test pre-trained classifier (VGG19)
     Option:
     '''
   )
@@ -201,114 +261,52 @@ while (True):
   if (user_input == '0'):
     exit()
 
-  # train classifier
+  # train basic classifier
   if (user_input == '1'):
     print('Starting classifier training...')
 
-    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
-    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
-
     classifier = createBasicClassifier(plot=True)
+
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
-    classifier_recorded = ModelCheckpoint(TRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
+    classifier_recorder = ModelCheckpoint(BASIC_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
-      generator=training_generator,
-      validation_data=validation_generator,
+      generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels),
+      validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False),
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
-      callbacks=[training_logger, classifier_recorded]
+      callbacks=[training_logger, classifier_recorder]
     )
     print('Classifier has been trained succesfully!')
 
-  # evaluate classifier
+  # basic classifier testing
   if (user_input == '2'):
-    print('Starting classifier evaluation...')
-
-    classifier = load_model(TRAINED_CLASSIFIER_FILE)
-    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
-
-    score = classifier.evaluate_generator(
-      generator=testing_generator,
-      steps=TOTAL_TESTING_BATCHES
+    testClassifier(
+      classifier=load_model(BASIC_CLASSIFIER_FILE),
+      greyscale=True
     )
 
-    print('Test score: ' +  str(score[0]))
-    print('Test accuracy:' +  str(score[1]))
-    print('Classifier has been evaluated successfully!')
-
-  # prediction of classes
+  # train pretrained clssifier
   if (user_input == '3'):
-    print('Starting prediction of classes...')
+    print('Starting to train pretrained classifier...')
 
-    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
-    classifier = load_model(TRAINED_CLASSIFIER_FILE)
-
-    predictions = classifier.predict_generator(
-      generator=testing_generator,
-      steps=TOTAL_TESTING_BATCHES
-    )
-
-    actual_testing_labels = getActualDatasetLabels(testing_set_filenames, class_labels)
-
-    confusion_matrix = confusion_matrix(
-      actual_testing_labels,    
-      predictions[:len(actual_testing_labels)].argmax(axis=1)
-    )
-
-    total_true_guesses = 0
-    for i in range(len(class_labels)):
-      total_true_guesses += confusion_matrix[i][i]
-    print('Prediction accuracy (based on confusion matrix): ', total_true_guesses / len(actual_testing_labels))
-
-    print('Writing confusion matrix to the file...')
-    np.savetxt(
-      CONFUSION_MATRIX_FILE,
-      np.asarray(confusion_matrix),
-      fmt="%d",
-      delimiter=","
-    )
-    print('Classes have been predicted, confusion matrix written into the file successfully!')
-
-  if (user_input == '4'):
-    print('Running pretrained classifier...')
-
-    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False)
-    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
-    testing_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
-
-    base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
-
-    for layer in base_model.layers:
-      layer.trainable = False
-
-    # add a new top layer
-    x = base_model.output
-    predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
-
-    # this is the model we will train
-    classifier = Model(inputs=base_model.input, outputs=predictions)
-
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    classifier = createPretrainedClassifier(plot=False)
 
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
-    classifier_recorded = ModelCheckpoint(TRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
+    classifier_recorder = ModelCheckpoint(PRETRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
-      generator=training_generator,
-      validation_data=validation_generator,
+      generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
+      validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
-      callbacks=[training_logger, classifier_recorded]
+      callbacks=[training_logger, classifier_recorder]
     )
+    print('Classifier has been trained succesfully!')
 
-    classifier = load_model(TRAINED_CLASSIFIER_FILE)
-    score = classifier.evaluate_generator(
-      generator=testing_generator,
-      steps=TOTAL_TESTING_BATCHES
+  # pre-trained classifier testing
+  if (user_input == '4'):
+    testClassifier(
+      classifier=load_model(PRETRAINED_CLASSIFIER_FILE),
+      greyscale=False
     )
-
-    print('Test score: ' +  str(score[0]))
-    print('Test accuracy:' +  str(score[1]))
-    print('Pretrained classifier has been evaluated successfully!')
