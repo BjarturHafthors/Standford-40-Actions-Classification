@@ -36,6 +36,9 @@ BASIC_CLASSIFIER_FILE = 'results/basic_classifier.h5'
 PRETRAINED_CLASSIFIER_FILE = 'results/pretrained_classifier.h5'
 CONFUSION_MATRIX_FILE = 'results/confusion_matrix.csv'
 
+CONFIGURABLE_MODEL_WEIGHTS_FILE = 'results/configurable_model_weights.h5'
+BEST_AUTOMATIC_MODEL_FILE = 'results/best_automatic_model.h5'
+
 def loadImage(filename, greyscale=True):
     # Save label
     label = filename.rpartition('_')[0].split('\\')[-1]
@@ -195,7 +198,7 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
 
   return classifier
 
-def createPretrainedClassifier(plot=False):
+def createPretrainedClassifier(plot=True):
   base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
 
   for layer in base_model.layers:
@@ -204,9 +207,9 @@ def createPretrainedClassifier(plot=False):
   # add a new top layer
   x = base_model.output
 
-  # x = Dense(512, activation='relu')(x)
-  # x = Dense(256, activation='relu')(x)
-  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
+  # x = Dense(512, activation='relu', name='dense_1')(x)
+  # x = Dense(256, activation='relu', name='dense_2')(x)
+  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax', name='final_layer')(x)
   
   # this is the model we will train
   classifier = Model(inputs=base_model.input, outputs=predictions)
@@ -217,6 +220,51 @@ def createPretrainedClassifier(plot=False):
   # plot cnn structure to the file
   if (plot):
     plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
+
+  return classifier
+
+# AUTOMATIC CLASSIFIER SEARCH CONCEPT
+
+# different configurations of custom learning rate (initial rate, and decrease rate) our function - learning_rate = initial_learning_rate * math.exp(-k * epoch)
+# different regularization values on the last Dense layer
+# different amount (from 0 to 2) of Dense layers (with RELU), and with different amount of nodes/neurons
+
+# [learning_rate, regularization_value, amount_of_dense_layers[amount_of_nodes per layer]]
+
+# form a vector of different configurations
+# compile a new classifier
+# train for X epochs
+# evaluate it and save validation accuracy
+
+# find out which parameter configuration vector yielded the best validation accuracy
+#
+def reconfigureClassifier(model_weights_file, learning_rate, regularization_value, amount_of_dense_layers, amount_of_nodes_per_layer):
+  base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+
+  for layer in base_model.layers:
+    layer.trainable = False
+
+  # add a new top layer
+  x = base_model.output
+
+  # create dense layers
+  for i in range(amount_of_dense_layers):
+    x = Dense(amount_of_nodes_per_layer[i], activation='relu', name='dense_' + str(i))(x)
+  
+  predictions = Dense(
+    NUMBER_OF_CLASSES,
+    activation='softmax',
+    kernel_regularizer=regularizers.l2(regularization_value),
+    name='final_layer'
+  )(x)
+  
+  # this is the model we will train
+  classifier = Model(inputs=base_model.input, outputs=predictions)
+
+  classifier.load_weights(model_weights_file, by_name=True, reshape=True, skip_mismatch=True)
+
+  optimizer_function = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=optimizer_function, loss='categorical_crossentropy', metrics=['accuracy'])
 
   return classifier
 
@@ -280,6 +328,8 @@ while (True):
 
     3 - train pre-trained classifier (VGG19)
     4 - test pre-trained classifier (VGG19)
+
+    5 - automatic model creation
     Option:
     '''
   )
@@ -339,3 +389,33 @@ while (True):
       classifier=load_model(PRETRAINED_CLASSIFIER_FILE),
       greyscale=False
     )
+
+  # automatic model creation (finding best params)
+  if (user_input == '5'):
+    print('Starting automatic classifier creation...')
+
+    # create initial classifier which we are going to tweak
+    classifier = createPretrainedClassifier(plot=False)
+
+    for i in range(10):
+      # classifier_recorder = ModelCheckpoint(PRETRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
+      classifier.fit_generator(
+        generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
+        validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
+        validation_steps=TOTAL_TESTING_BATCHES,
+        epochs=1,
+        steps_per_epoch=TOTAL_TRAINING_BATCHES,
+        # callbacks=[classifier_recorder]
+      )
+
+      classifier.save_weights(CONFIGURABLE_MODEL_WEIGHTS_FILE)
+
+      classifier = reconfigureClassifier(
+        model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
+        learning_rate=0.01 + i * 0.005,
+        regularization_value=0.01 + i * 0.005,
+        amount_of_dense_layers=2,
+        amount_of_nodes_per_layer=[512, 256]
+      )
+
+    print('Done.')
