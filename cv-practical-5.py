@@ -170,13 +170,34 @@ def createBasicClassifier(plot=False):
   classifier.add(Dense(40, activation="softmax"))
 
   sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+  
+  # plot cnn structure to the file
+  if (plot):
+    plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
+
+  return classifier
+
+def createPretrainedClassifier(plot=False):
+  base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+
+  for layer in base_model.layers:
+    layer.trainable = False
+
+  # add a new top layer
+  x = base_model.output
+  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
+
+  # this is the model we will train
+  classifier = Model(inputs=base_model.input, outputs=predictions)
+
+  sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
   # plot cnn structure to the file
   if (plot):
     plot_model(classifier, show_shapes=True, to_file=NETWORK_STRUCTURE_FILE)
 
-  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-  
   return classifier
 
 def testClassifier(classifier, greyscale=True):
@@ -244,15 +265,13 @@ while (True):
   if (user_input == '1'):
     print('Starting classifier training...')
 
-    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels)
-    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False)
-
     classifier = createBasicClassifier(plot=True)
+
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
     classifier_recorder = ModelCheckpoint(BASIC_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
-      generator=training_generator,
-      validation_data=validation_generator,
+      generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels),
+      validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False),
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
@@ -262,35 +281,22 @@ while (True):
 
   # basic classifier testing
   if (user_input == '2'):
-    testClassifier(load_model(BASIC_CLASSIFIER_FILE), greyscale=True)
+    testClassifier(
+      classifier=load_model(BASIC_CLASSIFIER_FILE),
+      greyscale=True
+    )
 
   # train pretrained clssifier
   if (user_input == '3'):
     print('Starting to train pretrained classifier...')
 
-    training_generator = getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False)
-    validation_generator = getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False)
-
-    base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
-
-    for layer in base_model.layers:
-      layer.trainable = False
-
-    # add a new top layer
-    x = base_model.output
-    predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
-
-    # this is the model we will train
-    classifier = Model(inputs=base_model.input, outputs=predictions)
-
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    classifier = createPretrainedClassifier(plot=False)
 
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
     classifier_recorder = ModelCheckpoint(PRETRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
-      generator=training_generator,
-      validation_data=validation_generator,
+      generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
+      validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
@@ -300,4 +306,7 @@ while (True):
 
   # pre-trained classifier testing
   if (user_input == '4'):
-    testClassifier(load_model(PRETRAINED_CLASSIFIER_FILE), greyscale=False)
+    testClassifier(
+      classifier=load_model(PRETRAINED_CLASSIFIER_FILE),
+      greyscale=False
+    )
