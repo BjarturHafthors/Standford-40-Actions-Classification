@@ -402,14 +402,16 @@ while (True):
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
+    # ToDo:
+    # create inner (for wide range params) and outer (for narrow range params like dense layers, reset inner) threshold - implement at the end of the loops
     epochs_without_improvment = 0
     break_threshold = 2
 
     for i in range(0, 2): # dense layers
       for j in range(1, 3): # parameters per first layer
         for k in range(1, 3): # parameters per second layer
-          for l in range(1, 5): # parameters per learning rate
-            for r in range(1, 5): # parameters per regularization value
+          for l in range(1, 3): # parameters per learning rate
+            for r in range(1, 3): # parameters per regularization value
               print('')
               classifier.fit_generator(
                 generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
@@ -454,8 +456,8 @@ while (True):
                   initial_amount_of_nodes_per_layer_2 + k * 64
                 ]
               )
-        if (i == 0): continue
-      if (i == 0): continue
+          if (i == 0): break
+        if (i == 0): break
 
     print('Automatic model search completed successfully!')
 
