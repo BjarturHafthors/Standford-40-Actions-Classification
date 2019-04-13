@@ -17,7 +17,7 @@ from keras import regularizers
 
 from sklearn.metrics import confusion_matrix
 
-BATCH_SIZE = 16 #64 previously
+BATCH_SIZE = 64
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
@@ -393,7 +393,7 @@ while (True):
       greyscale=False
     )
 
-  # automatic model creation (finding best params)
+  # automatic model creation (finding best parameters)
   if (user_input == '5'):
     print('Starting automatic classifier creation...')
 
@@ -410,6 +410,7 @@ while (True):
         for k in range(1, 3): # parameters per second layer
           for l in range(1, 5): # parameters per learning rate
             for r in range(1, 5): # parameters per regularization value
+              print('')
               classifier.fit_generator(
                 generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
                 epochs=1,
@@ -429,7 +430,7 @@ while (True):
                 epochs_without_improvment = 0
 
               if (epochs_without_improvment >= break_threshold):
-                print('not improving, breaking loop!')
+                print('Current configuration is not improving, breaking loop!')
                 epochs_without_improvment = 0
                 break
 
@@ -438,7 +439,8 @@ while (True):
               initial_learning_rate = 0.0
               initil_regularization_value = 0.0
               # initial_amount_of_dense_layers = 0
-              initial_amount_of_nodes_per_layer = 1
+              initial_amount_of_nodes_per_layer_1 = 128
+              initial_amount_of_nodes_per_layer_2 = 64
 
               print('Reconfiguring classifier:')
               print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
@@ -447,10 +449,15 @@ while (True):
                 learning_rate=initial_learning_rate + l * 0.0025,
                 regularization_value=initil_regularization_value + r * 0.0025,
                 amount_of_dense_layers=i,
-                amount_of_nodes_per_layer=[j, k]
+                amount_of_nodes_per_layer=[
+                  initial_amount_of_nodes_per_layer_1 + j * 128,
+                  initial_amount_of_nodes_per_layer_2 + k * 64
+                ]
               )
+        if (i == 0): continue
+      if (i == 0): continue
 
-    print('Done.')
+    print('Automatic model search completed successfully!')
 
   # test best automatic model found
   if (user_input == '6'):
