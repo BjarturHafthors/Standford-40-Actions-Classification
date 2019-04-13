@@ -330,6 +330,7 @@ while (True):
     4 - test pre-trained classifier (VGG19)
 
     5 - automatic model creation
+    6 - test automatic model
     Option:
     '''
   )
@@ -394,21 +395,27 @@ while (True):
   if (user_input == '5'):
     print('Starting automatic classifier creation...')
 
+    best_validation_accuracy = 0
+
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
     for i in range(10):
-      # classifier_recorder = ModelCheckpoint(PRETRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
       classifier.fit_generator(
         generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
-        validation_data=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
-        validation_steps=TOTAL_TESTING_BATCHES,
         epochs=1,
         steps_per_epoch=TOTAL_TRAINING_BATCHES,
-        # callbacks=[classifier_recorder]
       )
-
       classifier.save_weights(CONFIGURABLE_MODEL_WEIGHTS_FILE)
+
+      score = classifier.evaluate_generator(
+        generator=getDataGenerator(testing_set_filenames, BATCH_SIZE, class_labels, randomize=False, greyscale=False),
+        steps=TOTAL_TESTING_BATCHES
+      )
+      print('------------------------------------- Test accuracy:' +  str(score[1]))
+      if (score[1] > best_validation_accuracy):
+        best_validation_accuracy = score[1]
+        classifier.save(BEST_AUTOMATIC_MODEL_FILE)
 
       classifier = reconfigureClassifier(
         model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
@@ -419,3 +426,10 @@ while (True):
       )
 
     print('Done.')
+
+  # test best automatic model found
+  if (user_input == '6'):
+    testClassifier(
+      classifier=load_model(BEST_AUTOMATIC_MODEL_FILE),
+      greyscale=False
+    )
