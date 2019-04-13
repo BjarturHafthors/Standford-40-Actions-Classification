@@ -257,8 +257,8 @@ def testClassifier(classifier, greyscale=True):
   print('Classes have been predicted, confusion matrix written into the file successfully!')
 
 def expDecay(epoch):
-   initial_learning_rate = 0.015
-   k = 0.05
+   initial_learning_rate = 0.0125
+   k = 0.035
    learning_rate = initial_learning_rate * math.exp(-k * epoch)
 
    return learning_rate
