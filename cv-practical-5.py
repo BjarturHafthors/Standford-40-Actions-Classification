@@ -10,7 +10,7 @@ from keras.layers.core import Dense, Activation, Flatten, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import plot_model
-from keras.callbacks import CSVLogger, ModelCheckpoint
+from keras.callbacks import CSVLogger, ModelCheckpoint, LearningRateScheduler
 from keras.models import load_model
 from keras import applications
 from keras import regularizers
@@ -150,7 +150,7 @@ def getActualDatasetLabels(image_set_filenames, class_labels):
 
   return actual_labels
 
-def createBasicClassifier(plot=False, regulizer=True):
+def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True):
   classifier = Sequential()
 
   if regulizer:
@@ -181,7 +181,14 @@ def createBasicClassifier(plot=False, regulizer=True):
   else:
     classifier.add(Dense(40, activation="softmax"))
 
-  sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  if (custom_learning_rate):
+    learning_rate = 0.1
+    decay_rate = learning_rate / NUMBER_OF_EPOCHS
+    momentum = 0.8
+    sgd = SGD(lr=learning_rate, momentum=momentum, decay=decay_rate, nesterov=False)
+  else:
+    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+
   classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
   
   # plot cnn structure to the file
@@ -251,6 +258,13 @@ def testClassifier(classifier, greyscale=True):
   )
   print('Classes have been predicted, confusion matrix written into the file successfully!')
 
+def expDecay(epoch):
+   initial_learning_rate = 0.1
+   k = 0.1
+   learning_rate = initial_learning_rate * math.exp(-k * epoch)
+
+   return learning_rate
+
 ## Part 1: Split filenames into training and test sets
 
 training_set_filenames = getDatasetFilenames(TRAINING_DATA_FILE)
@@ -282,6 +296,8 @@ while (True):
 
     classifier = createBasicClassifier(plot=True)
 
+    lrate = LearningRateScheduler(expDecay)
+
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
     classifier_recorder = ModelCheckpoint(BASIC_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
     classifier.fit_generator(
@@ -290,7 +306,7 @@ while (True):
       validation_steps=TOTAL_TESTING_BATCHES,
       epochs=NUMBER_OF_EPOCHS,
       steps_per_epoch=TOTAL_TRAINING_BATCHES,
-      callbacks=[training_logger, classifier_recorder]
+      callbacks=[training_logger, classifier_recorder, lrate]
     )
     print('Classifier has been trained succesfully!')
 
