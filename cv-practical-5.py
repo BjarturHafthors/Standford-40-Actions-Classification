@@ -23,7 +23,7 @@ TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
 TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
-NUMBER_OF_EPOCHS = 1
+NUMBER_OF_EPOCHS = 25
 IMAGE_DIMENSION = 48
 
 DATASET_PATH = "data/images/"
@@ -186,8 +186,11 @@ def createPretrainedClassifier(plot=False):
 
   # add a new top layer
   x = base_model.output
-  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
 
+  # x = Dense(512, activation='relu')(x)
+  # x = Dense(256, activation='relu')(x)
+  predictions = Dense(NUMBER_OF_CLASSES, activation='softmax')(x)
+  
   # this is the model we will train
   classifier = Model(inputs=base_model.input, outputs=predictions)
 
@@ -290,7 +293,7 @@ while (True):
   if (user_input == '3'):
     print('Starting to train pretrained classifier...')
 
-    classifier = createPretrainedClassifier(plot=False)
+    classifier = createPretrainedClassifier(plot=True)
 
     training_logger = CSVLogger(TRAINING_LOG_FILE, append=False, separator=',')
     classifier_recorder = ModelCheckpoint(PRETRAINED_CLASSIFIER_FILE, save_best_only=True, monitor='val_acc', mode='max')
