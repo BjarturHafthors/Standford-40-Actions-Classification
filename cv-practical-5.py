@@ -150,17 +150,25 @@ def getActualDatasetLabels(image_set_filenames, class_labels):
 
   return actual_labels
 
-def createBasicClassifier(plot=False):
+def createBasicClassifier(plot=False, regulizer=True):
   classifier = Sequential()
 
-  classifier.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1), kernel_regularizer=regularizers.l2(0.01)))
+  if regulizer:
+    classifier.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1), kernel_regularizer=regularizers.l2(0.01)))
+  else:
+    classifier.add(Conv2D(32, (3, 3), input_shape = (IMAGE_DIMENSION, IMAGE_DIMENSION, 1)))
+  
   classifier.add(BatchNormalization())
   classifier.add(Activation('relu'))
   classifier.add(MaxPooling2D(pool_size=(2, 2)))
 
   classifier.add(Dropout(0.5))
 
-  classifier.add(Conv2D(32, (3, 3), kernel_regularizer=regularizers.l2(0.01)))
+  if regulizer:
+    classifier.add(Conv2D(32, (3, 3), kernel_regularizer=regularizers.l2(0.01)))
+  else:
+    classifier.add(Conv2D(32, (3, 3)))
+  
   classifier.add(BatchNormalization())
   classifier.add(Activation('relu'))
   classifier.add(MaxPooling2D(pool_size=(2, 2)))
@@ -168,7 +176,10 @@ def createBasicClassifier(plot=False):
   classifier.add(Dropout(0.5))
 
   classifier.add(Flatten())
-  classifier.add(Dense(40, activation="softmax", kernel_regularizer=regularizers.l2(0.01)))
+  if regulizer:
+    classifier.add(Dense(40, activation="softmax", kernel_regularizer=regularizers.l2(0.01)))
+  else:
+    classifier.add(Dense(40, activation="softmax"))
 
   sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
   classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
