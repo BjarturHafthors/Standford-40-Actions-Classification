@@ -4,8 +4,6 @@ import random
 import math
 import numpy as np
 
-import tensorflow as tf
-
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import Dense, Activation, Flatten, Dropout
@@ -19,7 +17,7 @@ from keras import regularizers
 
 from sklearn.metrics import confusion_matrix
 
-BATCH_SIZE = 32 #64 previously
+BATCH_SIZE = 16 #64 previously
 TRAINING_SET_SIZE = 4000
 TESTING_SET_SIZE = 5532
 TOTAL_TRAINING_BATCHES = math.ceil(TRAINING_SET_SIZE / BATCH_SIZE)
@@ -322,11 +320,6 @@ testing_set_filenames = getDatasetFilenames(TESTING_DATA_FILE)
 
 class_labels = getDatasetLabels(testing_set_filenames)
 
-# limits how much GPU resources can tensorflow access
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.7
-session = tf.Session(config=config)
-
 while (True):
   user_input = input(
     '''
@@ -409,8 +402,7 @@ while (True):
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
-    epochs_in_a_row = 0
-    is_improving = True
+    epochs_without_improvment = 0
     break_threshold = 2
 
     for i in range(0, 2): # dense layers
@@ -434,17 +426,14 @@ while (True):
                 print('!!! NEW BEST MODEL ENCOUNTERED !!!')
                 best_validation_accuracy = score[1]
                 classifier.save(BEST_AUTOMATIC_MODEL_FILE)
+                epochs_without_improvment = 0
 
-                is_improving = True
-                epochs_in_a_row = 0
-
-              if (epochs_in_a_row >= break_threshold and not is_improving):
+              if (epochs_without_improvment >= break_threshold):
                 print('not improving, breaking loop!')
-                is_improving = False
-                epochs_in_a_row = 0
+                epochs_without_improvment = 0
                 break
 
-              epochs_in_a_row += 1
+              epochs_without_improvment += 1
 
               initial_learning_rate = 0.0
               initil_regularization_value = 0.0
