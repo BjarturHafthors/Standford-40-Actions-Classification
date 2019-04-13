@@ -4,6 +4,8 @@ import random
 import math
 import numpy as np
 
+import tensorflow as tf
+
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import Dense, Activation, Flatten, Dropout
