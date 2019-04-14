@@ -26,6 +26,7 @@ TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 50
 IMAGE_DIMENSION = 48
+# IMAGE_DIMENSION = 96
 
 DATASET_PATH = "data/images/"
 TRAINING_DATA_FILE = "data/image-splits/train.txt"
@@ -200,6 +201,7 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
 
 def createPretrainedClassifier(plot=True):
   base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+  # base_model = applications.mobilenet_v2.MobileNetV2(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
 
   for layer in base_model.layers:
     layer.trainable = False
@@ -214,8 +216,8 @@ def createPretrainedClassifier(plot=True):
   # this is the model we will train
   classifier = Model(inputs=base_model.input, outputs=predictions)
 
-  sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-  classifier.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+  optimizer_function = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+  classifier.compile(optimizer=optimizer_function, loss='categorical_crossentropy', metrics=['accuracy'])
 
   # plot cnn structure to the file
   if (plot):
@@ -402,11 +404,9 @@ while (True):
     # create initial classifier which we are going to tweak
     classifier = createPretrainedClassifier(plot=False)
 
-    # ToDo:
-    # create inner (for wide range params) and outer (for narrow range params like dense layers, reset inner) threshold - implement at the end of the loops
+    # automatic model search parameters
     epochs_without_improvment = 0
     break_threshold = 2
-
     is_network_structure_changed = False
     extra_epochs = 5 # extra epochs to train if network layer structure has changed
 
