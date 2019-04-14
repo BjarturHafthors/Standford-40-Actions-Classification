@@ -511,7 +511,7 @@ while (True):
                   print('!!! NEW BEST MODEL ENCOUNTERED !!!')
                   best_validation_accuracy = score[1]
                   classifier.save(BEST_AUTOMATIC_MODEL_FILE)
-                  epochs_without_improvment = 0
+                  epochs_without_improvment -= extra_epochs
                   configurations_without_improvment = 0
 
                 # break the loop if threshold exceeded and validation accuracy is not rising
