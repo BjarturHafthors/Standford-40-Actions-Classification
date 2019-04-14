@@ -407,12 +407,28 @@ while (True):
     epochs_without_improvment = 0
     break_threshold = 2
 
-    for i in range(0, 2): # dense layers
-      for j in range(1, 3): # parameters per first layer
-        for k in range(1, 3): # parameters per second layer
-          for l in range(1, 3): # parameters per learning rate
-            for r in range(1, 3): # parameters per regularization value
+    is_network_structure_changed = False
+    extra_epochs = 5 # extra epochs to train if network layer structure has changed
+
+    for i in range(0, 3): # dense layers
+      is_network_structure_changed = True
+
+      for j in range(0, 4): # parameters per first layer
+        is_network_structure_changed = True
+
+        for k in range(0, 4): # parameters per second layer
+          is_network_structure_changed = True
+
+          for l in range(0, 3): # parameters per learning rate
+            for r in range(0, 3): # parameters per regularization value
               print('')
+
+              # give some additional epoch to explore when network layer structure changes
+              if (is_network_structure_changed):
+                print('Network layer structure has changed, training for ' + str(extra_epochs) + ' extra epochs.')
+                epochs_without_improvment -= extra_epochs
+                is_network_structure_changed = False
+
               classifier.fit_generator(
                 generator=getDataGenerator(training_set_filenames, BATCH_SIZE, class_labels, greyscale=False),
                 epochs=1,
