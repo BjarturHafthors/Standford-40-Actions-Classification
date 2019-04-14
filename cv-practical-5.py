@@ -3,6 +3,7 @@ import cv2
 import random
 import math
 import numpy as np
+import gc
 
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
@@ -25,8 +26,8 @@ TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 50
-IMAGE_DIMENSION = 48
-# IMAGE_DIMENSION = 96
+# IMAGE_DIMENSION = 48
+IMAGE_DIMENSION = 96 # only for Part C
 
 DATASET_PATH = "data/images/"
 TRAINING_DATA_FILE = "data/image-splits/train.txt"
@@ -200,8 +201,8 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
   return classifier
 
 def createPretrainedClassifier(plot=True):
-  base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
-  # base_model = applications.mobilenet_v2.MobileNetV2(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+  # base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+  base_model = applications.mobilenet_v2.MobileNetV2(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
 
   for layer in base_model.layers:
     layer.trainable = False
@@ -454,11 +455,11 @@ while (True):
 
               epochs_without_improvment += 1
 
-              initial_learning_rate = 0.0
+              initial_learning_rate = 0.0025
               initil_regularization_value = 0.0
               # initial_amount_of_dense_layers = 0
-              initial_amount_of_nodes_per_layer_1 = 128
-              initial_amount_of_nodes_per_layer_2 = 64
+              initial_amount_of_nodes_per_layer_1 = 320
+              initial_amount_of_nodes_per_layer_2 = 160
 
               print('Reconfiguring classifier:')
               print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
@@ -468,10 +469,12 @@ while (True):
                 regularization_value=initil_regularization_value + r * 0.0025,
                 amount_of_dense_layers=i,
                 amount_of_nodes_per_layer=[
-                  initial_amount_of_nodes_per_layer_1 + j * 128,
-                  initial_amount_of_nodes_per_layer_2 + k * 64
+                  initial_amount_of_nodes_per_layer_1 + j * 320,
+                  initial_amount_of_nodes_per_layer_2 + k * 160
                 ]
               )
+
+              gc.collect()
           if (i == 0): break
         if (i == 0): break
 
