@@ -412,6 +412,9 @@ while (True):
     is_network_structure_changed = False
     extra_epochs = 5 # extra epochs to train if network layer structure has changed
 
+    # always compare two subsequent epochs to see if it is rising and do not break the loop in this case even threshold was exceeded!
+    previous_validation_accuracy = 0
+
     for i in range(0, 3): # dense layers
       is_network_structure_changed = True
 
@@ -441,17 +444,20 @@ while (True):
                 steps=TOTAL_TESTING_BATCHES
               )
               print('------------------------------------- Test accuracy:' +  str(score[1]))
+
               if (score[1] > best_validation_accuracy):
                 print('!!! NEW BEST MODEL ENCOUNTERED !!!')
                 best_validation_accuracy = score[1]
                 classifier.save(BEST_AUTOMATIC_MODEL_FILE)
                 epochs_without_improvment = 0
 
-              if (epochs_without_improvment >= break_threshold):
+              # break the loop if threshold exceeded and validation accuracy is not rising
+              if (epochs_without_improvment >= break_threshold and previous_validation_accuracy > score[1]):
                 print('Current configuration is not improving, breaking loop!')
                 epochs_without_improvment = 0
                 break
 
+              previous_validation_accuracy = score[1]
               epochs_without_improvment += 1
 
               initial_learning_rate = 0.0025
