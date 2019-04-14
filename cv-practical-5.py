@@ -446,7 +446,7 @@ while (True):
           for l in range(0, 3): # parameters per learning rate
             for r in range(0, 3): # parameters per regularization value
 
-              if (i != 0 and j != 0 and k != 0 and l != 0 and r != 0):
+              if (not(i == 0 and j == 0 and k == 0 and l == 0 and r == 0)):
                 print('')
                 print('Reconfiguring classifier:')
                 print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
