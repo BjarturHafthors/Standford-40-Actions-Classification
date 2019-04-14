@@ -27,8 +27,8 @@ TOTAL_TESTING_BATCHES = math.ceil(TESTING_SET_SIZE / BATCH_SIZE)
 
 NUMBER_OF_CLASSES = 40
 NUMBER_OF_EPOCHS = 50
-# IMAGE_DIMENSION = 48
-IMAGE_DIMENSION = 96 # only for Part C
+IMAGE_DIMENSION = 48
+# IMAGE_DIMENSION = 96 # only for MobileNetV2
 
 DATASET_PATH = "data/images/"
 TRAINING_DATA_FILE = "data/image-splits/train.txt"
@@ -202,8 +202,8 @@ def createBasicClassifier(plot=False, regulizer=True, custom_learning_rate=True)
   return classifier
 
 def createPretrainedClassifier(plot=True):
-  # base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
-  base_model = applications.mobilenet_v2.MobileNetV2(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+  base_model = applications.vgg19.VGG19(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
+  # base_model = applications.mobilenet_v2.MobileNetV2(include_top=False, weights='imagenet', input_shape=(IMAGE_DIMENSION, IMAGE_DIMENSION, 3), pooling='avg')
 
   for layer in base_model.layers:
     layer.trainable = False
@@ -423,8 +423,6 @@ while (True):
 
           for l in range(0, 3): # parameters per learning rate
             for r in range(0, 3): # parameters per regularization value
-              print('')
-
               # give some additional epoch to explore when network layer structure changes
               if (is_network_structure_changed):
                 print('Network layer structure has changed, training for ' + str(extra_epochs) + ' extra epochs.')
@@ -459,15 +457,16 @@ while (True):
               initial_learning_rate = 0.0025
               initil_regularization_value = 0.0
               # initial_amount_of_dense_layers = 0
-              initial_amount_of_nodes_per_layer_1 = 320
-              initial_amount_of_nodes_per_layer_2 = 160
+              initial_amount_of_nodes_per_layer_1 = 128
+              initial_amount_of_nodes_per_layer_2 = 64
 
-              # release memmory
+              # release GPU memmory
               K.clear_session()
               del classifier
               for q in range(0, 4):
                 gc.collect()
 
+              print('')
               print('Reconfiguring classifier:')
               print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
               classifier = reconfigureClassifier(
@@ -476,8 +475,8 @@ while (True):
                 regularization_value=initil_regularization_value + r * 0.0025,
                 amount_of_dense_layers=i,
                 amount_of_nodes_per_layer=[
-                  initial_amount_of_nodes_per_layer_1 + j * 320,
-                  initial_amount_of_nodes_per_layer_2 + k * 160
+                  initial_amount_of_nodes_per_layer_1 + j * 128,
+                  initial_amount_of_nodes_per_layer_2 + k * 64
                 ]
               )
           if (i == 0): break
