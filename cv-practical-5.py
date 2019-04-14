@@ -432,6 +432,7 @@ while (True):
     # ToDo
     # also introduce break out of for loop if few following configurations did not improve!!!!!!
     # currently we are just run all possible configs with escape from while loop if it is not improving
+    configurations_without_improvment = 0
 
     for i in range(0, 3): # dense layers
       is_network_structure_changed = True
@@ -444,6 +445,33 @@ while (True):
 
           for l in range(0, 3): # parameters per learning rate
             for r in range(0, 3): # parameters per regularization value
+
+              if (i != 0 and j != 0 and k != 0 and l != 0 and r != 0):
+                print('')
+                print('Reconfiguring classifier:')
+                print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
+                classifier = reconfigureClassifier(
+                  model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
+                  learning_rate=initial_learning_rate + l * 0.0025,
+                  regularization_value=initial_regularization_value + r * 0.0025,
+                  amount_of_dense_layers=i,
+                  amount_of_nodes_per_layer=[
+                    initial_amount_of_nodes_per_layer_1 + j * 128,
+                    initial_amount_of_nodes_per_layer_2 + k * 64
+                  ]
+                )
+
+                # fill log
+                with open(AUTOMATIC_MODEL_SEARCH_LOG_FILE, 'a') as f:
+                  writer = csv.writer(f)
+                  writer.writerow([
+                    str(i), 
+                    str(initial_amount_of_nodes_per_layer_1 + j * 128), 
+                    str(initial_amount_of_nodes_per_layer_2 + k * 64), 
+                    str(initial_learning_rate + l * 0.0025),
+                    str(initial_regularization_value + r * 0.0025),
+                    str(score[1])
+                  ])
               
               # give some additional epoch to explore when network layer structure changes
               if (is_network_structure_changed):
@@ -470,6 +498,7 @@ while (True):
                   best_validation_accuracy = score[1]
                   classifier.save(BEST_AUTOMATIC_MODEL_FILE)
                   epochs_without_improvment = 0
+                  configurations_without_improvment = 0
 
                 # break the loop if threshold exceeded and validation accuracy is not rising
                 if (epochs_without_improvment >= break_threshold and previous_validation_accuracy > score[1]):
@@ -477,9 +506,14 @@ while (True):
                   epochs_without_improvment = 0
                   previous_validation_accuracy = score[1]
                   break
-
                 previous_validation_accuracy = score[1]
                 epochs_without_improvment += 1
+
+              if (configurations_without_improvment >= break_threshold):
+                print('Sequence of configurations is not improving, breaking loop!')
+                configurations_without_improvment = 0
+                break
+              configurations_without_improvment += 1
 
               initial_learning_rate = 0.0025
               initial_regularization_value = 0.0
@@ -492,32 +526,6 @@ while (True):
               del classifier
               for q in range(0, 4):
                 gc.collect()
-
-              print('')
-              print('Reconfiguring classifier:')
-              print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
-              classifier = reconfigureClassifier(
-                model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
-                learning_rate=initial_learning_rate + l * 0.0025,
-                regularization_value=initial_regularization_value + r * 0.0025,
-                amount_of_dense_layers=i,
-                amount_of_nodes_per_layer=[
-                  initial_amount_of_nodes_per_layer_1 + j * 128,
-                  initial_amount_of_nodes_per_layer_2 + k * 64
-                ]
-              )
-
-              # fill log
-              with open(AUTOMATIC_MODEL_SEARCH_LOG_FILE, 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                  str(i), 
-                  str(initial_amount_of_nodes_per_layer_1 + j * 128), 
-                  str(initial_amount_of_nodes_per_layer_2 + k * 64), 
-                  str(initial_learning_rate + l * 0.0025),
-                  str(initial_regularization_value + r * 0.0025),
-                  str(score[1])
-                ])
 
           if (i == 0): break
         if (i == 0): break
