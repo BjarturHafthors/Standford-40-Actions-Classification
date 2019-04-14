@@ -494,7 +494,7 @@ while (True):
                   steps=TOTAL_TESTING_BATCHES
                 )
                 print('------------------------------------- Test accuracy:' +  str(score[1]))
-                
+
                 # fill log
                 with open(AUTOMATIC_MODEL_SEARCH_LOG_FILE, 'a') as f:
                   writer = csv.writer(f)
@@ -535,7 +535,7 @@ while (True):
               for q in range(0, 4):
                 gc.collect()
 
-          if (i == 0): break
+          if (i < 2): break
         if (i == 0): break
 
     print('Automatic model search completed successfully!')
