@@ -435,18 +435,18 @@ while (True):
     configurations_without_improvment = 0
 
     # params of model search
-    initial_learning_rate = 0.0025
-    learning_rate_step = 0.0025
+    initial_learning_rate = 0.02
+    learning_rate_step = -0.0025
 
-    initial_regularization_value = 0.0
-    regularization_value_step = 0.0025
+    initial_regularization_value = 0.0175
+    regularization_value_step = -0.0025
 
     # initial_amount_of_dense_layers = 0
-    initial_amount_of_nodes_per_layer_1 = 128
-    amount_of_nodes_per_layer_1_step = 128
+    initial_amount_of_nodes_per_layer_1 = 512
+    amount_of_nodes_per_layer_1_step = -128
 
-    initial_amount_of_nodes_per_layer_2 = 64
-    amount_of_nodes_per_layer_2_step = 64
+    initial_amount_of_nodes_per_layer_2 = 256
+    amount_of_nodes_per_layer_2_step = -64
 
     for i in range(0, 3): # dense layers
       is_network_structure_changed = True
@@ -457,8 +457,8 @@ while (True):
         for k in range(0, 4): # parameters per second layer
           is_network_structure_changed = True
 
-          for l in range(0, 3): # parameters per learning rate
-            for r in range(0, 3): # parameters per regularization value
+          for l in range(0, 7): # parameters per learning rate
+            for r in range(0, 7): # parameters per regularization value
 
               if (not(i == 0 and j == 0 and k == 0 and l == 0 and r == 0)):
                 print('')
