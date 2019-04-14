@@ -5,6 +5,7 @@ import math
 import numpy as np
 import gc
 
+from keras import backend as K
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import Dense, Activation, Flatten, Dropout
@@ -461,6 +462,12 @@ while (True):
               initial_amount_of_nodes_per_layer_1 = 320
               initial_amount_of_nodes_per_layer_2 = 160
 
+              # release memmory
+              K.clear_session()
+              del classifier
+              for q in range(0, 4):
+                gc.collect()
+
               print('Reconfiguring classifier:')
               print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
               classifier = reconfigureClassifier(
@@ -473,8 +480,6 @@ while (True):
                   initial_amount_of_nodes_per_layer_2 + k * 160
                 ]
               )
-
-              gc.collect()
           if (i == 0): break
         if (i == 0): break
 
