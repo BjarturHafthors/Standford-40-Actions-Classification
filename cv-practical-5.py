@@ -231,11 +231,12 @@ def createPretrainedClassifier(plot=True):
 
 # AUTOMATIC CLASSIFIER SEARCH CONCEPT
 
-# different configurations of custom learning rate (initial rate, and decrease rate) our function - learning_rate = initial_learning_rate * math.exp(-k * epoch)
+# different configurations of custom learning rate
 # different regularization values on the last Dense layer
-# different amount (from 0 to 2) of Dense layers (with RELU), and with different amount of nodes/neurons
+# different amount (from 0 to 2) of Dense layers (with RELU), and with different amount of nodes
 
-# [learning_rate, regularization_value, amount_of_dense_layers[amount_of_nodes per layer]]
+# feature vector:
+# [ learning_rate, regularization_value, amount_of_dense_layers, amount_of_nodes_per layer[2]] ]
 
 # form a vector of different configurations
 # compile a new classifier
@@ -319,7 +320,9 @@ def expDecay(epoch):
 
    return learning_rate
 
-## Part 1: Split filenames into training and test sets
+## ---------------------------------------------------------------------------------------------
+## MAIN APPLICATION
+## ---------------------------------------------------------------------------------------------
 
 training_set_filenames = getDatasetFilenames(TRAINING_DATA_FILE)
 testing_set_filenames = getDatasetFilenames(TESTING_DATA_FILE)
@@ -429,9 +432,7 @@ while (True):
     # always compare two subsequent epochs to see if it is rising and do not break the loop in this case even threshold was exceeded!
     previous_validation_accuracy = 0
 
-    # ToDo
-    # also introduce break out of for loop if few following configurations did not improve!!!!!!
-    # currently we are just run all possible configs with escape from while loop if it is not improving
+    # introduced break out of the for loop if few sequence of configurations did not improve (using same break_threshold)
     configurations_without_improvment = 0
 
     # params of model search
