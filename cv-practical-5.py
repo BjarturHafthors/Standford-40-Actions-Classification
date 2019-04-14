@@ -434,6 +434,20 @@ while (True):
     # currently we are just run all possible configs with escape from while loop if it is not improving
     configurations_without_improvment = 0
 
+    # params of model search
+    initial_learning_rate = 0.0025
+    learning_rate_step = 0.0025
+
+    initial_regularization_value = 0.0
+    regularization_value_step = 0.0025
+
+    # initial_amount_of_dense_layers = 0
+    initial_amount_of_nodes_per_layer_1 = 128
+    amount_of_nodes_per_layer_1_step = 128
+
+    initial_amount_of_nodes_per_layer_2 = 64
+    amount_of_nodes_per_layer_2_step = 64
+
     for i in range(0, 3): # dense layers
       is_network_structure_changed = True
 
@@ -452,26 +466,14 @@ while (True):
                 print('Feature vector: [' + str(i) + ', ' + str(j) + ', ' + str(k) + ', ' + str(l) + ', ' + str(r) + ']')
                 classifier = reconfigureClassifier(
                   model_weights_file=CONFIGURABLE_MODEL_WEIGHTS_FILE,
-                  learning_rate=initial_learning_rate + l * 0.0025,
-                  regularization_value=initial_regularization_value + r * 0.0025,
+                  learning_rate=initial_learning_rate + l * learning_rate_step,
+                  regularization_value=initial_regularization_value + r * regularization_value_step,
                   amount_of_dense_layers=i,
                   amount_of_nodes_per_layer=[
-                    initial_amount_of_nodes_per_layer_1 + j * 128,
-                    initial_amount_of_nodes_per_layer_2 + k * 64
+                    initial_amount_of_nodes_per_layer_1 + j * amount_of_nodes_per_layer_1_step,
+                    initial_amount_of_nodes_per_layer_2 + k * amount_of_nodes_per_layer_2_step
                   ]
                 )
-
-                # fill log
-                with open(AUTOMATIC_MODEL_SEARCH_LOG_FILE, 'a') as f:
-                  writer = csv.writer(f)
-                  writer.writerow([
-                    str(i), 
-                    str(initial_amount_of_nodes_per_layer_1 + j * 128), 
-                    str(initial_amount_of_nodes_per_layer_2 + k * 64), 
-                    str(initial_learning_rate + l * 0.0025),
-                    str(initial_regularization_value + r * 0.0025),
-                    str(score[1])
-                  ])
               
               # give some additional epoch to explore when network layer structure changes
               if (is_network_structure_changed):
@@ -492,6 +494,18 @@ while (True):
                   steps=TOTAL_TESTING_BATCHES
                 )
                 print('------------------------------------- Test accuracy:' +  str(score[1]))
+                
+                # fill log
+                with open(AUTOMATIC_MODEL_SEARCH_LOG_FILE, 'a') as f:
+                  writer = csv.writer(f)
+                  writer.writerow([
+                    str(i), 
+                    str(initial_amount_of_nodes_per_layer_1 + j * amount_of_nodes_per_layer_1_step), 
+                    str(initial_amount_of_nodes_per_layer_2 + k * amount_of_nodes_per_layer_2_step), 
+                    str(initial_learning_rate + l * learning_rate_step),
+                    str(initial_regularization_value + r * regularization_value_step),
+                    str(score[1])
+                  ])
 
                 if (score[1] > best_validation_accuracy):
                   print('!!! NEW BEST MODEL ENCOUNTERED !!!')
@@ -514,12 +528,6 @@ while (True):
                 configurations_without_improvment = 0
                 break
               configurations_without_improvment += 1
-
-              initial_learning_rate = 0.0025
-              initial_regularization_value = 0.0
-              # initial_amount_of_dense_layers = 0
-              initial_amount_of_nodes_per_layer_1 = 128
-              initial_amount_of_nodes_per_layer_2 = 64
 
               # release GPU memmory
               K.clear_session()
