@@ -455,6 +455,7 @@ while (True):
               if (epochs_without_improvment >= break_threshold and previous_validation_accuracy > score[1]):
                 print('Current configuration is not improving, breaking loop!')
                 epochs_without_improvment = 0
+                previous_validation_accuracy = score[1]
                 break
 
               previous_validation_accuracy = score[1]
